@@ -25,10 +25,11 @@ namespace OverflowBackend.Controllers
         }
 
         [HttpPost]
-        [Route("api/login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        [Route("api/signin")]
+        public async Task<IActionResult> SignIn([FromBody] SinInRequest request)
         {
-            return Ok();
+            var result = await _authService.SignIn(request.UserName, request.Password);
+            return Ok(result);
         }
 
         [HttpGet]

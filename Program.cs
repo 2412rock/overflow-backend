@@ -1,14 +1,23 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using OverflowBackend.Services;
 using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
 using System.Net;
+using System.Net.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options =>
 {
-    options.Listen(IPAddress.Any, 4500);
+    options.Listen(IPAddress.Parse("192.168.1.125"), 4500 /*listenOptions =>
+    {
+
+            // local
+            listenOptions.UseHttps("C:/Users/Adi/Desktop/dev certs overflow/certificate.pfx", "password");
+        
+
+    }*/);
     options.Listen(IPAddress.Any, 4200, listenOptions =>
     {
         try
@@ -59,6 +68,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 string hostIp = "";
 try
@@ -75,7 +85,7 @@ catch
 
     if (String.IsNullOrEmpty(hostIp))
     {
-        hostIp = "10.132.0.2";
+        hostIp = "192.168.1.125";
     }
 }
 
@@ -96,5 +106,18 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseWebSockets();
+app.Use(async (context, next) =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        await WebSocketHandler.HandleWebSocketRequest(webSocket, context);
+    }
+    else
+    {
+        await next();
+    }
+});
 
 app.Run();

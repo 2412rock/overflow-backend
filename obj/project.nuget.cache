@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "HKKiZKZ1yF1MAz55F/Ggl2feYRblS30ETnXUnuYk0OhXg2ODgJMLzOF5fd1dSaXnRYVOGBVMGu1mOtTNpjY4fw==",
+  "dgSpecHash": "8j0EveB2Amu/E3BcprCfF0nfNMBLkPvVK+LMMtOahvqxO51CevuEkl5A2rDQsvNg5+Pa83Z/pJbSaaDnXfrCEA==",
   "success": true,
   "projectFilePath": "C:\\Users\\Adi\\Desktop\\overflow-backend\\OverflowBackend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Adi\\.nuget\\packages\\azure.core\\1.25.0\\azure.core.1.25.0.nupkg.sha512",
     "C:\\Users\\Adi\\.nuget\\packages\\azure.identity\\1.7.0\\azure.identity.1.7.0.nupkg.sha512",
+    "C:\\Users\\Adi\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Adi\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
     "C:\\Users\\Adi\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512",
     "C:\\Users\\Adi\\.nuget\\packages\\microsoft.data.sqlclient\\5.1.1\\microsoft.data.sqlclient.5.1.1.nupkg.sha512",

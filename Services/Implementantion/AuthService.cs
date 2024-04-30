@@ -9,10 +9,36 @@ namespace OverflowBackend.Services.Implementantion
     public class AuthService: IAuthService
     {
         private readonly OverflowDbContext _dbContext;
+        private readonly IPasswordHashService _passwordHashService;
 
-        public AuthService(OverflowDbContext dbContext)
+        public AuthService(OverflowDbContext dbContext, IPasswordHashService passwordHashService)
         {
             _dbContext = dbContext;
+            _passwordHashService = passwordHashService;
+        }
+
+        public async Task<Maybe<bool>> SignIn(string username, string password)
+        {
+            var maybe = new Maybe<bool>();
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            if (user != null)
+            {
+                var hashedPassword = user.Password;
+                if(_passwordHashService.VerifyPassword(password, hashedPassword))
+                {
+                    maybe.SetSuccess(true);
+                }
+                else
+                {
+                    maybe.SetException("Invalid username or password");
+                }
+                
+            }
+            else
+            {
+                maybe.SetException("Invalid username or password");
+            }
+            return maybe;
         }
 
         public async Task<Maybe<bool>> SignUp(string username, string password, string? email) 
@@ -24,7 +50,7 @@ namespace OverflowBackend.Services.Implementantion
                 var user = new DBUser()
                 {
                     Username = username,
-                    Password = password,
+                    Password = _passwordHashService.HashPassword(password),
                     Email = email,
                     Rank = 1,
                     NumberOfGames = 0
