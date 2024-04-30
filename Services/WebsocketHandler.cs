@@ -84,11 +84,11 @@ namespace OverflowBackend.Services
             WebSocketReceiveResult result = await game.Player1Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             while (!result.CloseStatus.HasValue)
             {
-                byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 1");
+                //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 1");
                 //send move to player 2
                 try
                 {
-                    await game.Player2Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
 
                 }
                 catch (Exception e) { 
@@ -102,7 +102,7 @@ namespace OverflowBackend.Services
         private static async Task ListenOnSocketPlayer2(Game game)
         {
             byte[] msg = Encoding.UTF8.GetBytes("Welcome player 2");
-            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
 
 
             byte[] buffer = new byte[1024];
@@ -110,11 +110,11 @@ namespace OverflowBackend.Services
             WebSocketReceiveResult result = await game.Player2Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             while (!result.CloseStatus.HasValue)
             {
-                byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 2");
+                //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 2");
                 //send move to player 2
                 try
                 {
-                    await game.Player1Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
                 }
                 catch
                 {
