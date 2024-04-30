@@ -69,6 +69,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
+builder.Services.AddTransient<IRedisService, RedisService>();
+builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
+
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 string hostIp = "";
 try

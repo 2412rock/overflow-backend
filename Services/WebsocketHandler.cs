@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using static Azure.Core.HttpHeader;
 
@@ -86,17 +87,32 @@ namespace OverflowBackend.Services
             {
                 //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 1");
                 //send move to player 2
-                try
+                while (true)
                 {
-                    await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
-
-                }
-                catch (Exception e) { 
+                    try
+                    {
+                        await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        await Task.Delay(2000);
+                        //player not yet connected
+                    }
                 }
                 // receive move from player 1
                 result = await game.Player1Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             }
             await game.Player1Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
+            try
+            {
+                games.Remove(game);
+            }
+            catch 
+            {
+
+            }
+            
         }
 
         private static async Task ListenOnSocketPlayer2(Game game)
@@ -112,18 +128,32 @@ namespace OverflowBackend.Services
             {
                 //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 2");
                 //send move to player 2
-                try
+                while (true)
                 {
-                    await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
-                }
-                catch
-                {
-                    
+                    try
+                    {
+                        await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        break;
+                    }
+                    catch
+                    {
+                        //Player not yer connected
+                        await Task.Delay(2000);
+
+                    }
                 }
                 // receive move from player 1
                 result = await game.Player2Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             }
             await game.Player2Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
+            try
+            {
+                games.Remove(game);
+            }
+            catch 
+            {
+
+            }
         }
     }
 }
