@@ -81,7 +81,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     foreach(var match in queue)
                     {
-                        if(match.Player1 != null && match.Player2 == null)
+                        if(match.Player1 != null && match.Player2 == null && !(match.SeenByPlayer1 || match.SeenByPlayer2))
                         {
                             match.Player2 = username;
                             maybe.SetSuccess("Matched");
@@ -101,12 +101,29 @@ namespace OverflowBackend.Services.Implementantion
 
             lock (locker)
             {
+                Match matchToRemove = null;
                 foreach(var match in queue)
                 {
                     if(match.Player1 == username || match.Player2 == username)
                     {
+                        if(match.Player1 == username)
+                        {
+                            match.SeenByPlayer1 = true;
+                        }
+                        if (match.Player2 == username)
+                        {
+                            match.SeenByPlayer2 = true;
+                        }
+                        if(match.SeenByPlayer1 && match.SeenByPlayer2)
+                        {
+                            matchToRemove = match;
+                        }
                         maybe.SetSuccess(match);
                     }
+                }
+                if(matchToRemove != null)
+                {
+                    queue.Remove(matchToRemove);
                 }
             }
             
@@ -144,5 +161,8 @@ namespace OverflowBackend.Services.Implementantion
         public string Player2 { get; set; }
 
         public List<int> Board { get; set; }
+
+        public bool SeenByPlayer1 = false;
+        public bool SeenByPlayer2 = false;
     }
 }
