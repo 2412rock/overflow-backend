@@ -96,7 +96,7 @@ builder.Services.AddDbContext<OverflowDbContext>(options =>
     options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 var app = builder.Build();
 
-app.UseCors("AllowOVerflowOrigin");
+app.UseCors("AllowLocalHost");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
