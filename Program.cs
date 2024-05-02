@@ -57,10 +57,10 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod();
         });
 
-    options.AddPolicy("AllowDorelOrigin",
+    options.AddPolicy("AllowOVerflowOrigin",
         builder =>
         {
-            builder.WithOrigins("https://dorelapp.xyz")
+            builder.WithOrigins("https://overflowapp.xyz")
                    .AllowAnyHeader()
                    .AllowAnyMethod().AllowCredentials();
         });
@@ -96,7 +96,7 @@ builder.Services.AddDbContext<OverflowDbContext>(options =>
     options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 var app = builder.Build();
 
-app.UseCors("AllowAnyOrigin");
+app.UseCors("AllowOVerflowOrigin");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
