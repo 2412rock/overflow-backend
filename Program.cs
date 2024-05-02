@@ -91,12 +91,12 @@ catch
         hostIp = "192.168.1.125";
     }
 }
-
+Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
     options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 var app = builder.Build();
 
-app.UseCors("AllowLocalHost");
+app.UseCors("AllowAnyOrigin");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
