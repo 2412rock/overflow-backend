@@ -53,7 +53,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     Username = username,
                     Password = _passwordHashService.HashPassword(password),
-                    Email = email,
+                    Email = "",
                     Rank = 1,
                     NumberOfGames = 0
                 };
