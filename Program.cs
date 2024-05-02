@@ -93,7 +93,7 @@ catch
 }
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
-    options.UseSqlServer($"Server=0.0.0.0,1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+    options.UseSqlServer($"Server=127.0.0.1,1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 var app = builder.Build();
 
 app.UseCors("AllowAnyOrigin");
