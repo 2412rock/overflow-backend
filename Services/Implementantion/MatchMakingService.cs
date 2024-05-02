@@ -81,7 +81,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     foreach(var match in queue)
                     {
-                        if(match.Player1 != null && match.Player2 == null && !(match.SeenByPlayer1 || match.SeenByPlayer2))
+                        if(match.Player1 != null && match.Player2 == null /*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
                         {
                             match.Player2 = username;
                             maybe.SetSuccess("Matched");
