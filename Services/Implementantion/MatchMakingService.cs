@@ -133,18 +133,13 @@ namespace OverflowBackend.Services.Implementantion
                     {
                         if(match.Player1 == username)
                         {
-                            match.SeenByPlayer1 = true;
                             match.HearBeatPlayer1 = DateTime.Now;
                         }
                         if (match.Player2 == username)
                         {
-                            match.SeenByPlayer2 = true;
                             match.HearBeatPlayer2 = DateTime.Now;
                         }
-                        if(match.SeenByPlayer1 && match.SeenByPlayer2)
-                        {
-                            matchToRemove = match;
-                        }
+                        
                         maybe.SetSuccess(match);
                     }
                 }
