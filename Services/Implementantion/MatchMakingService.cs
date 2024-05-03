@@ -1,4 +1,5 @@
-﻿using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services.Interface;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -12,9 +13,34 @@ namespace OverflowBackend.Services.Implementantion
         static readonly object locker = new object();
         public MatchMakingService()
         {
-
+            Thread thread = new Thread(new ThreadStart(MatchCheck));
+            thread.Start();
         }
 
+        private void MatchCheck()
+        {
+            while (true)
+            {
+                lock (locker)
+                {
+                    var matchesToRemove = new List<Match>();
+                    foreach (var match in queue)
+                    {
+                        if ((DateTime.Now - match.HearBeatPlayer1).Seconds > 60 || (DateTime.Now - match.HearBeatPlayer2).Seconds > 20)
+                        {
+                            matchesToRemove.Add(match);
+                        }
+                    }
+                    foreach (var match in matchesToRemove)
+                    {
+                        Console.WriteLine($"Removed match with {match.Player1} and {match.Player2}");
+                        queue.Remove(match);
+                    }
+                }
+                Thread.Sleep(5000);
+            }
+            
+        }
         private static int GetRandomNumber(int minValue, int maxValue)
         {
             Random random = new Random();
@@ -92,7 +118,6 @@ namespace OverflowBackend.Services.Implementantion
                 maybe.SetException("Something went wrong");
                 return maybe;
             }
-            
         }
 
         public Maybe<Match> FindMyMatch(string username)
@@ -109,10 +134,12 @@ namespace OverflowBackend.Services.Implementantion
                         if(match.Player1 == username)
                         {
                             match.SeenByPlayer1 = true;
+                            match.HearBeatPlayer1 = DateTime.Now;
                         }
                         if (match.Player2 == username)
                         {
                             match.SeenByPlayer2 = true;
+                            match.HearBeatPlayer2 = DateTime.Now;
                         }
                         if(match.SeenByPlayer1 && match.SeenByPlayer2)
                         {
@@ -159,10 +186,13 @@ namespace OverflowBackend.Services.Implementantion
     {
         public string Player1 { get; set; }
         public string Player2 { get; set; }
-
         public List<int> Board { get; set; }
 
         public bool SeenByPlayer1 = false;
         public bool SeenByPlayer2 = false;
+
+        public DateTime HearBeatPlayer1 = DateTime.Now;
+
+        public DateTime HearBeatPlayer2 = DateTime.Now;
     }
 }

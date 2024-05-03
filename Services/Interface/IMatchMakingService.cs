@@ -11,5 +11,6 @@ namespace OverflowBackend.Services.Interface
         public Maybe<Match> FindMyMatch(string username);
 
         public void RemoveMatch(string username);
+
     }
 }
