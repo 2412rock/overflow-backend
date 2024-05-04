@@ -67,7 +67,7 @@ namespace OverflowBackend.Services.Implementantion
         private void GenerateBoard(Match match)
         {
             var grid = new List<int>();
-            var numberOf2s = GetRandomNumber(3, 7);
+            var numberOf2s = GetRandomNumber(2, 4);
 
             for (var i = 0; i < numberOf2s; i++)
             {
