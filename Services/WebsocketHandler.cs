@@ -22,7 +22,8 @@ namespace OverflowBackend.Services
     public static class WebSocketHandler
     {
         private static List<Game> games = new List<Game>();
-        
+        static readonly object locker = new object();
+
         public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext)
         {
             /* */
@@ -38,7 +39,38 @@ namespace OverflowBackend.Services
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string playerName)
         {
             var gameFound = false;
-            foreach(var game in games)
+            Game game;
+            lock (locker)
+            {
+                game = games.Where(game => game.GameId == gameId && game.Player1 != null && game.Player2 == null).FirstOrDefault();
+                if (game != null)
+                {
+                    gameFound = true;
+                    game.Player2 = playerName;
+                    game.Player2Socket = webSocket;
+                }
+                else
+                {
+                    var newGame = new Game();
+                    newGame.GameId = gameId;
+                    newGame.Player1 = playerName;
+                    newGame.Player1Socket = webSocket;
+                    newGame.Player2Socket = null;
+                    games.Add(newGame);
+                    game = newGame;
+                }
+            }
+
+            if (gameFound)
+            {
+                await ListenOnSocketPlayer2(game);
+            }
+            else
+            {
+                await ListenOnSocketPlayer1(game);
+            }
+            
+            /*foreach(var game in games)
             {
                 if(game.GameId == gameId)
                 {
@@ -61,7 +93,7 @@ namespace OverflowBackend.Services
                 game.Player2Socket = null;
                 games.Add(game);
                 await ListenOnSocketPlayer1(game);
-            }
+            }*/
             
         }
 
@@ -89,12 +121,12 @@ namespace OverflowBackend.Services
                 //send move to player 2
                 while (true)
                 {
-                    try
+                    if(game.Player2Socket != null)
                     {
                         await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
                         break;
                     }
-                    catch (Exception e)
+                    else
                     {
                         await Task.Delay(2000);
                         //player not yet connected
@@ -130,12 +162,12 @@ namespace OverflowBackend.Services
                 //send move to player 2
                 while (true)
                 {
-                    try
+                    if(game.Player1Socket != null)
                     {
                         await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
                         break;
                     }
-                    catch
+                    else
                     {
                         //Player not yer connected
                         await Task.Delay(2000);
