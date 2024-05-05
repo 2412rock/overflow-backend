@@ -141,10 +141,14 @@ namespace OverflowBackend.Services
                 games.Remove(game);
             }
             catch 
+            { }
+            try
             {
-
+                byte[] msgBuffer = Encoding.UTF8.GetBytes("Opponent left");
+                await game.Player2Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
             }
-            
+            catch { }
+
         }
 
         private static async Task ListenOnSocketPlayer2(Game game)
@@ -182,10 +186,13 @@ namespace OverflowBackend.Services
             {
                 games.Remove(game);
             }
-            catch 
+            catch {}
+            try
             {
-
+                byte[] msgBuffer = Encoding.UTF8.GetBytes("Opponent left");
+                await game.Player1Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
             }
+            catch { }
         }
     }
 }
