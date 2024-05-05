@@ -66,7 +66,7 @@ namespace OverflowBackend.Services.Implementantion
 
         private void GenerateBoard(Match match)
         {
-            var grid = new List<int>();
+            var grid = new List<double>();
             var numberOf2s = GetRandomNumber(2, 4);
 
             for (var i = 0; i < numberOf2s; i++)
@@ -79,15 +79,11 @@ namespace OverflowBackend.Services.Implementantion
             }
             grid.Add(3);
             grid.Add(4);
+            grid.Add(0.1);
+            grid.Add(0.2);
             Shuffle(grid);
-            var gridWithPlayers = new List<int>();
-            gridWithPlayers.Add(1);
-            for (var gridIndex = 0; gridIndex < grid.Count; gridIndex++)
-            {
-                gridWithPlayers.Add(grid[gridIndex]);
-            }
-            gridWithPlayers.Add(1);
-            match.Board = gridWithPlayers;
+            
+            match.Board = grid;
         }
 
         public Maybe<string> AddOrMatchPlayer(string username)
@@ -181,7 +177,7 @@ namespace OverflowBackend.Services.Implementantion
     {
         public string Player1 { get; set; }
         public string Player2 { get; set; }
-        public List<int> Board { get; set; }
+        public List<double> Board { get; set; }
 
         public bool SeenByPlayer1 = false;
         public bool SeenByPlayer2 = false;
