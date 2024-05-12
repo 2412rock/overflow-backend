@@ -22,6 +22,13 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        [Route("api/getQueueSize")]
+        public IActionResult GetMyMatch()
+        {
+            var result = _matchMakingService.GetQueueSize();
+            return Ok(result);
+        }
 
         [HttpGet]
         [Route("api/getMyMatch")]

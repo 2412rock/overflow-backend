@@ -12,5 +12,7 @@ namespace OverflowBackend.Services.Interface
 
         public void RemoveMatch(string username);
 
+        public Maybe<int> GetQueueSize();
+
     }
 }

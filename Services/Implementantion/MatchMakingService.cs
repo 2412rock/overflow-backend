@@ -17,6 +17,16 @@ namespace OverflowBackend.Services.Implementantion
             thread.Start();
         }
 
+
+        public Maybe<int> GetQueueSize()
+        {
+            var maybe = new Maybe<int>();
+            
+            maybe.SetSuccess(queue.Count);
+
+            return maybe;
+        }
+
         private void MatchCheck()
         {
             while (true)
