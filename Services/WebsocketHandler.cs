@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using static Azure.Core.HttpHeader;
 
 namespace OverflowBackend.Services
@@ -17,6 +19,8 @@ namespace OverflowBackend.Services
         public WebSocket Player1Socket { get; set; }
 
         public WebSocket Player2Socket { get; set; }
+
+        public BoardLogic BoardLogic { get; set; }
         // Add additional game state properties as needed
     }
     public static class WebSocketHandler
@@ -56,8 +60,10 @@ namespace OverflowBackend.Services
                     newGame.Player1 = playerName;
                     newGame.Player1Socket = webSocket;
                     newGame.Player2Socket = null;
+                    newGame.BoardLogic = new BoardLogic();
                     games.Add(newGame);
                     game = newGame;
+
                 }
             }
 
@@ -109,7 +115,7 @@ namespace OverflowBackend.Services
 
         private static async Task ListenOnSocketPlayer1(Game game)
         {
-            byte[] msg = Encoding.UTF8.GetBytes("Welcome player 1");
+            byte[] msg = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.BoardData));
             await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
 
             byte[] buffer = new byte[1024];
@@ -119,11 +125,32 @@ namespace OverflowBackend.Services
             {
                 //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 1");
                 //send move to player 2
+                string receivedDataString = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                string[] parts = null;
+                if (receivedDataString != "opponent")
+                {
+                    parts = receivedDataString.Split(':');
+
+                }
                 while (true)
                 {
                     if(game.Player2Socket != null)
                     {
-                        await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        var allowedMove = false;
+                        if (parts != null && parts.Length == 2)
+                        {
+                            allowedMove = game.BoardLogic.MovePlayer(int.Parse(parts[0]), int.Parse(parts[1]));
+                        }
+                        if (receivedDataString == "opponent" || allowedMove)
+                        {
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        }
+                        else
+                        {
+                            byte[] availableMoves = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.playerOneAvailableMoves));
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(availableMoves), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+
                         break;
                     }
                     else
@@ -153,7 +180,7 @@ namespace OverflowBackend.Services
 
         private static async Task ListenOnSocketPlayer2(Game game)
         {
-            byte[] msg = Encoding.UTF8.GetBytes("Welcome player 2");
+            byte[] msg = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.BoardData));
             await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
 
 
@@ -164,11 +191,34 @@ namespace OverflowBackend.Services
             {
                 //byte[] msgBuffer = Encoding.UTF8.GetBytes("Some message from player 2");
                 //send move to player 2
+                string receivedDataString = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                string[] parts = null;
+                if (receivedDataString != "opponent")
+                {
+                   parts = receivedDataString.Split(':');
+                   
+                }
+                
+
                 while (true)
                 {
                     if(game.Player1Socket != null)
                     {
-                        await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        var allowedMove = false;
+                        if(parts != null && parts.Length == 2)
+                        {
+                            allowedMove = game.BoardLogic.MovePlayer(int.Parse(parts[0]), int.Parse(parts[1]));
+                        }
+                        if(receivedDataString == "opponent" || allowedMove)
+                        {
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                        }
+                        else
+                        {
+                            byte[] availableMoves = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.playerTwoAvailableMoves));
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(availableMoves), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                        
                         break;
                     }
                     else

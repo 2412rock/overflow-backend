@@ -51,50 +51,7 @@ namespace OverflowBackend.Services.Implementantion
             }
             
         }
-        private static int GetRandomNumber(int minValue, int maxValue)
-        {
-            Random random = new Random();
 
-            // Generate a random number within the range
-            int randomNumber = random.Next(minValue, maxValue + 1);
-            return randomNumber;
-        }
-
-        static void Shuffle<T>(List<T> list)
-        {
-            Random random = new Random();
-            int n = list.Count;
-            while (n > 1)
-            {
-                n--;
-                int k = random.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
-        }
-
-        private void GenerateBoard(Match match)
-        {
-            var grid = new List<double>();
-            var numberOf2s = GetRandomNumber(2, 4);
-
-            for (var i = 0; i < numberOf2s; i++)
-            {
-                grid.Add(2);
-            }
-            for (var i = 0; i < 21 - numberOf2s; i++)
-            {
-                grid.Add(1);
-            }
-            grid.Add(3);
-            grid.Add(4);
-            grid.Add(0.1);
-            grid.Add(0.2);
-            Shuffle(grid);
-            
-            match.Board = grid;
-        }
 
         public Maybe<string> AddOrMatchPlayer(string username)
         {
@@ -104,7 +61,6 @@ namespace OverflowBackend.Services.Implementantion
                 if (queue.Count == 0)
                 {
                     var match = new Match() { Player1 = username };
-                    GenerateBoard(match);
                     queue.Add(match);
                     maybe.SetSuccess("Added to queue");
                     return maybe;
