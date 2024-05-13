@@ -36,7 +36,7 @@ namespace OverflowBackend.Services.Implementantion
                     var matchesToRemove = new List<Match>();
                     foreach (var match in queue)
                     {
-                        if ((DateTime.Now - match.HearBeatPlayer1).Seconds > 60 || (DateTime.Now - match.HearBeatPlayer2).Seconds > 20)
+                        if ( ( match.HearBeatPlayer1.HasValue && (DateTime.Now - match.HearBeatPlayer1.Value).Seconds > 60) || (match.HearBeatPlayer2.HasValue && (DateTime.Now - match.HearBeatPlayer2.Value).Seconds > 60 ) )
                         {
                             matchesToRemove.Add(match);
                         }
@@ -148,8 +148,8 @@ namespace OverflowBackend.Services.Implementantion
         public bool SeenByPlayer1 = false;
         public bool SeenByPlayer2 = false;
 
-        public DateTime HearBeatPlayer1 = DateTime.Now;
+        public DateTime? HearBeatPlayer1 = null;
 
-        public DateTime HearBeatPlayer2 = DateTime.Now;
+        public DateTime? HearBeatPlayer2 = null;
     }
 }
