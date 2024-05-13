@@ -42,32 +42,58 @@ namespace OverflowBackend.Services
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string playerName)
         {
-            var gameFound = false;
+            var player1 = false;
             Game game;
             lock (locker)
             {
-                game = games.Where(game => game.GameId == gameId && game.Player1 != null && game.Player2 == null).FirstOrDefault();
+                game = games.Where(game => game.GameId == gameId && (game.Player1 != null || game.Player2 != null) ).FirstOrDefault();
                 if (game != null)
                 {
-                    gameFound = true;
-                    game.Player2 = playerName;
-                    game.Player2Socket = webSocket;
+                    
+                    var gameIdSplit = gameId.Split("-");
+                    if (gameIdSplit[0] == playerName)
+                    {
+                        player1 = true;
+                        game.Player1 = playerName;
+                        game.Player1Socket = webSocket;
+                    }
+                    else
+                    {
+                        game.Player2 = playerName;
+                        game.Player2Socket = webSocket;
+                    }
+                    
                 }
                 else
                 {
                     var newGame = new Game();
                     newGame.GameId = gameId;
-                    newGame.Player1 = playerName;
-                    newGame.Player1Socket = webSocket;
-                    newGame.Player2Socket = null;
-                    newGame.BoardLogic = new BoardLogic();
-                    games.Add(newGame);
-                    game = newGame;
+                    var gameIdSplit = gameId.Split("-");
+                    if (gameIdSplit[0] == playerName)
+                    {
+                        player1 = true;
+                        newGame.Player1 = playerName;
+                        newGame.Player1Socket = webSocket;
+                        newGame.Player2Socket = null;
+                        newGame.BoardLogic = new BoardLogic();
+                        games.Add(newGame);
+                        game = newGame;
+                    }
+                    else
+                    {
+                        newGame.Player2 = playerName;
+                        newGame.Player2Socket = webSocket;
+                        newGame.Player1Socket = null;
+                        newGame.BoardLogic = new BoardLogic();
+                        games.Add(newGame);
+                        game = newGame;
+                    }
+                    
 
                 }
             }
 
-            if (gameFound)
+            if (!player1)
             {
                 await ListenOnSocketPlayer2(game);
             }
