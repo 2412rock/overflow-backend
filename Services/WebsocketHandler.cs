@@ -169,6 +169,11 @@ namespace OverflowBackend.Services
                         }
                         if (receivedDataString == "opponent" || allowedMove)
                         {
+                            if(game.BoardLogic.playerTwoAvailableMoves.Count == 0 && receivedDataString != "opponent")
+                            {
+                                byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
+                                await game.Player1Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
                             await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
                         }
                         else
@@ -237,6 +242,11 @@ namespace OverflowBackend.Services
                         }
                         if(receivedDataString == "opponent" || allowedMove)
                         {
+                            if (game.BoardLogic.playerOneAvailableMoves.Count == 0 && receivedDataString != "opponent")
+                            {
+                                byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
+                                await game.Player2Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
                             await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
                         }
                         else
