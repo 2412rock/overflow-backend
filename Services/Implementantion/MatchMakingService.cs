@@ -36,7 +36,7 @@ namespace OverflowBackend.Services.Implementantion
                     var matchesToRemove = new List<Match>();
                     foreach (var match in queue)
                     {
-                        if ( ( match.HearBeatPlayer1.HasValue && (DateTime.Now - match.HearBeatPlayer1.Value).Seconds > 60) || (match.HearBeatPlayer2.HasValue && (DateTime.Now - match.HearBeatPlayer2.Value).Seconds > 60 ) )
+                        if ( ( match.HearBeatPlayer1.HasValue && (DateTime.Now - match.HearBeatPlayer1.Value).Seconds > 12) || (match.HearBeatPlayer2.HasValue && (DateTime.Now - match.HearBeatPlayer2.Value).Seconds > 12 ) )
                         {
                             matchesToRemove.Add(match);
                         }
