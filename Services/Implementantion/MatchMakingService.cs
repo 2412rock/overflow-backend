@@ -77,7 +77,9 @@ namespace OverflowBackend.Services.Implementantion
                         }
                     }
                 }
-                maybe.SetException("Something went wrong");
+                var newMatch = new Match() { Player1 = username };
+                queue.Add(newMatch);
+                maybe.SetSuccess("Added to queue");
                 return maybe;
             }
         }
