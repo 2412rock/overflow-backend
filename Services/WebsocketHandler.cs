@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using static Azure.Core.HttpHeader;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace OverflowBackend.Services
 {
@@ -21,7 +23,36 @@ namespace OverflowBackend.Services
         public WebSocket Player2Socket { get; set; }
 
         public BoardLogic BoardLogic { get; set; }
+        public Timer Player1Timer { get; set; }
+        public Timer Player2Timer { get; set; }
         // Add additional game state properties as needed
+
+        public event EventHandler Player1TimeoutEvent;
+        public event EventHandler Player2TimeoutEvent;
+
+        public DateTime Player1TimerStart { get; set; }
+        public DateTime Player2TimerStart { get; set; }
+
+        public Game()
+        {
+            Player1Timer = new Timer(120000); // 120000 120 seconds in milliseconds
+            Player1Timer.Elapsed += OnPlayer1Timeout;
+            Player1Timer.AutoReset = false;
+
+            Player2Timer = new Timer(120000); // 120 seconds in milliseconds
+            Player2Timer.Elapsed += OnPlayer2Timeout;
+            Player2Timer.AutoReset = false;
+        }
+
+        private void OnPlayer1Timeout(object sender, ElapsedEventArgs e)
+        {
+            Player1TimeoutEvent?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnPlayer2Timeout(object sender, ElapsedEventArgs e)
+        {
+            Player2TimeoutEvent?.Invoke(this, EventArgs.Empty);
+        }
     }
     public static class WebSocketHandler
     {
@@ -38,6 +69,46 @@ namespace OverflowBackend.Services
      
             await HandleWebSocketRequest(webSocket, gameId, playerName);
         
+        }
+
+        private static void OnPlayer1Timeout(object sender, EventArgs e)
+        {
+            if (sender is Game game)
+            {
+                byte[] msg = Encoding.UTF8.GetBytes("Player 1 ran out of time");
+                Task.Run(async () =>
+                {
+                    if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                    {
+                        await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                    if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                    {
+                        await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                    games.Remove(game);
+                }).Wait();
+            }
+        }
+
+        private static void OnPlayer2Timeout(object sender, EventArgs e)
+        {
+            if (sender is Game game)
+            {
+                byte[] msg = Encoding.UTF8.GetBytes("Player 2 ran out of time");
+                Task.Run(async () =>
+                {
+                    if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                    {
+                        await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                    if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                    {
+                        await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                    games.Remove(game);
+                }).Wait();
+            }
         }
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string playerName)
@@ -75,6 +146,9 @@ namespace OverflowBackend.Services
                         newGame.Player1 = playerName;
                         newGame.Player1Socket = webSocket;
                         newGame.Player2Socket = null;
+                        newGame.Player1TimeoutEvent += OnPlayer1Timeout;
+                        newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+
                         newGame.BoardLogic = new BoardLogic();
                         games.Add(newGame);
                         game = newGame;
@@ -84,6 +158,8 @@ namespace OverflowBackend.Services
                         newGame.Player2 = playerName;
                         newGame.Player2Socket = webSocket;
                         newGame.Player1Socket = null;
+                        newGame.Player1TimeoutEvent += OnPlayer1Timeout;
+                        newGame.Player2TimeoutEvent += OnPlayer2Timeout;
                         newGame.BoardLogic = new BoardLogic();
                         games.Add(newGame);
                         game = newGame;
@@ -129,16 +205,6 @@ namespace OverflowBackend.Services
             
         }
 
-
-        private static async Task GameLogic(string gameId, Game game)
-        {
-            // Implement game logic here
-            // You can send messages to players using the WebSocket connections stored in _gameConnections
-            // For example:
-            // await _gameConnections[gameId].Item1.SendAsync(messageData, WebSocketMessageType.Text, true, CancellationToken.None);
-            // await _gameConnections[gameId].Item2.SendAsync(messageData, WebSocketMessageType.Text, true, CancellationToken.None);
-        }
-
         private static async Task ListenOnSocketPlayer1(Game game)
         {
             byte[] msg = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.BoardData));
@@ -174,7 +240,16 @@ namespace OverflowBackend.Services
                                 byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
                                 await game.Player1Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                             }
+                            game.Player1Timer.Stop();
+                            game.Player2Timer.Start();
+                            game.Player2TimerStart = DateTime.Now;
+                            // send move
                             await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                            // send timer start
+                            var timeStartByteArray = Encoding.UTF8.GetBytes("start:" + game.Player2TimerStart.ToString());
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+
                         }
                         else
                         {
@@ -238,6 +313,7 @@ namespace OverflowBackend.Services
                         var allowedMove = false;
                         if(parts != null && parts.Length == 2)
                         {
+                            game.Player2Timer.Start();
                             allowedMove = game.BoardLogic.MovePlayer(int.Parse(parts[0]), int.Parse(parts[1]));
                         }
                         if(receivedDataString == "opponent" || allowedMove)
@@ -247,7 +323,18 @@ namespace OverflowBackend.Services
                                 byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
                                 await game.Player2Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                             }
+                            game.Player2Timer.Stop();
+                            game.Player1Timer.Start();
+                            game.Player1TimerStart = DateTime.Now;
+                            
+                            // send move
                             await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+
+                            // send timer start
+                            var timeStartByteArray = Encoding.UTF8.GetBytes("start:" + game.Player1TimerStart.ToString());
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                            
                         }
                         else
                         {
