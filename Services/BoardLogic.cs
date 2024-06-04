@@ -57,14 +57,14 @@ namespace OverflowBackend.Services
                 {
                     cell.CellType = CellType.infinite;
                 }
-                else if (BoardData[index] == 0.1)
+                else if (BoardData[index] == 0.111)
                 {
                     // set player 1
                     this.playerOnePosition = index;
                     cell.HasPlayerOne = true;
                     cell.CellType = CellType.Default;
                 }
-                else if (BoardData[index] == 0.2)
+                else if (BoardData[index] == 0.222)
                 {
                     // set player 1
                     this.playerTwoPosition = index;
@@ -337,8 +337,8 @@ namespace OverflowBackend.Services
             }
             grid.Add(3);
             grid.Add(4);
-            grid.Add(0.1);
-            grid.Add(0.2);
+            grid.Add(0.111);
+            grid.Add(0.222);
             Shuffle(grid);
 
             return grid;
