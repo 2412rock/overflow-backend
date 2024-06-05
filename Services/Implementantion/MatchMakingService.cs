@@ -61,6 +61,11 @@ namespace OverflowBackend.Services.Implementantion
                 if (queue.Count == 0)
                 {
                     var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
+                    if (GameCollection.List == null)
+                    {
+                        GameCollection.List = new List<string>();
+                        GameCollection.List.Add(match.GameId);
+                    }
                     queue.Add(match);
                     maybe.SetSuccess("Added to queue");
                     return maybe;
@@ -78,6 +83,11 @@ namespace OverflowBackend.Services.Implementantion
                     }
                 }
                 var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
+                if(GameCollection.List == null)
+                {
+                    GameCollection.List = new List<string>();
+                    GameCollection.List.Add(newMatch.GameId);
+                }
                 queue.Add(newMatch);
                 maybe.SetSuccess("Added to queue");
                 return maybe;

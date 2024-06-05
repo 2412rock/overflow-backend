@@ -118,6 +118,23 @@ namespace OverflowBackend.Services
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string players, string playerName)
         {
+            var gameFound = false;
+            if(GameCollection.List != null)
+            {
+                foreach(var element in GameCollection.List)
+                {
+                    if(element == gameId)
+                    {
+                        gameFound = true;
+                        break;
+                    }
+                }
+            }
+            if (!gameFound)
+            {
+                // Invalid request
+                return;
+            }
             var player1 = false;
             Game game;
             lock (locker)
@@ -283,6 +300,7 @@ namespace OverflowBackend.Services
             await game.Player1Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
             game.Player1Timer.Close();
             game.Player2Timer.Close();
+            GameCollection.List.Remove(game.GameId);
             try
             {
                 games.Remove(game);
@@ -379,6 +397,7 @@ namespace OverflowBackend.Services
             await game.Player2Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
             game.Player1Timer.Close();
             game.Player2Timer.Close();
+            GameCollection.List.Remove(game.GameId);
             try
             {
                 games.Remove(game);
