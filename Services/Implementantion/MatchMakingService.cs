@@ -64,8 +64,8 @@ namespace OverflowBackend.Services.Implementantion
                     if (GameCollection.List == null)
                     {
                         GameCollection.List = new List<string>();
-                        GameCollection.List.Add(match.GameId);
                     }
+                    GameCollection.List.Add(match.GameId);
                     queue.Add(match);
                     maybe.SetSuccess("Added to queue");
                     return maybe;
@@ -86,8 +86,8 @@ namespace OverflowBackend.Services.Implementantion
                 if(GameCollection.List == null)
                 {
                     GameCollection.List = new List<string>();
-                    GameCollection.List.Add(newMatch.GameId);
                 }
+                GameCollection.List.Add(newMatch.GameId);
                 queue.Add(newMatch);
                 maybe.SetSuccess("Added to queue");
                 return maybe;
