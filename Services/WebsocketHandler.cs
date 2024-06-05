@@ -64,10 +64,11 @@ namespace OverflowBackend.Services
             /* */
             
             string gameId = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
-            string playerName = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[2];
+            string players = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[2];
+            string playerName = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[3];
 
      
-            await HandleWebSocketRequest(webSocket, gameId, playerName);
+            await HandleWebSocketRequest(webSocket, gameId, players, playerName);
         
         }
 
@@ -115,7 +116,7 @@ namespace OverflowBackend.Services
             }
         }
 
-        public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string playerName)
+        public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string players, string playerName)
         {
             var player1 = false;
             Game game;
@@ -125,8 +126,8 @@ namespace OverflowBackend.Services
                 if (game != null)
                 {
                     
-                    var gameIdSplit = gameId.Split("-");
-                    if (gameIdSplit[0] == playerName)
+                    var playersSplit = players.Split("-");
+                    if (playersSplit[0] == playerName)
                     {
                         player1 = true;
                         game.Player1 = playerName;
@@ -143,8 +144,8 @@ namespace OverflowBackend.Services
                 {
                     var newGame = new Game();
                     newGame.GameId = gameId;
-                    var gameIdSplit = gameId.Split("-");
-                    if (gameIdSplit[0] == playerName)
+                    var playersSplit = players.Split("-");
+                    if (playersSplit[0] == playerName)
                     {
                         player1 = true;
                         newGame.Player1 = playerName;

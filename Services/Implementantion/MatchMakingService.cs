@@ -60,7 +60,7 @@ namespace OverflowBackend.Services.Implementantion
                 var maybe = new Maybe<string>();
                 if (queue.Count == 0)
                 {
-                    var match = new Match() { Player1 = username };
+                    var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
                     queue.Add(match);
                     maybe.SetSuccess("Added to queue");
                     return maybe;
@@ -77,7 +77,7 @@ namespace OverflowBackend.Services.Implementantion
                         }
                     }
                 }
-                var newMatch = new Match() { Player1 = username };
+                var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
                 queue.Add(newMatch);
                 maybe.SetSuccess("Added to queue");
                 return maybe;
@@ -147,11 +147,10 @@ namespace OverflowBackend.Services.Implementantion
         public string Player2 { get; set; }
         public List<double> Board { get; set; }
 
-        public bool SeenByPlayer1 = false;
-        public bool SeenByPlayer2 = false;
-
         public DateTime? HearBeatPlayer1 = null;
 
         public DateTime? HearBeatPlayer2 = null;
+
+        public string GameId { get; set; }
     }
 }
