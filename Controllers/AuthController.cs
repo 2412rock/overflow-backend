@@ -39,5 +39,13 @@ namespace OverflowBackend.Controllers
             var result = await _authService.UserNameExists(username);
             return Ok(result);
         }
+
+        [HttpPost]
+        [Route("api/refreshToken")]
+        public async Task<IActionResult> LoginGoogle([FromBody] RefreshRequest request)
+        {
+            var result = await _authService.RefreshToken(request.RefreshToken);
+            return Ok(result);
+        }
     }
 }

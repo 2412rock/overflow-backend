@@ -8,6 +8,8 @@ namespace OverflowBackend.Services.Interface
 
         public Task<Maybe<bool>> SignUp(string username, string password, string? email);
 
-        public Task<Maybe<bool>> SignIn(string username, string password);
+        public Task<Maybe<string[]>> SignIn(string username, string password);
+
+        public Task<Maybe<string>> RefreshToken(string token);
     }
 }

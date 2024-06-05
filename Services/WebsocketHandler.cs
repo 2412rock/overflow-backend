@@ -280,6 +280,8 @@ namespace OverflowBackend.Services
                 result = await game.Player1Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             }
             await game.Player1Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
+            game.Player1Timer.Close();
+            game.Player2Timer.Close();
             try
             {
                 games.Remove(game);
@@ -374,6 +376,8 @@ namespace OverflowBackend.Services
                 result = await game.Player2Socket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
             }
             await game.Player2Socket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, System.Threading.CancellationToken.None);
+            game.Player1Timer.Close();
+            game.Player2Timer.Close();
             try
             {
                 games.Remove(game);
