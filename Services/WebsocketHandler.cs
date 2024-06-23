@@ -9,6 +9,8 @@ using System.Text.Json.Serialization;
 using static Azure.Core.HttpHeader;
 using System.Timers;
 using Timer = System.Timers.Timer;
+using OverflowBackend.Services.Implementantion;
+using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Services
 {
@@ -32,6 +34,17 @@ namespace OverflowBackend.Services
 
         public DateTime Player1TimerStart { get; set; }
         public DateTime Player2TimerStart { get; set; }
+
+        public bool GameOver { get; set; }
+
+        public int Player1Score { get; set; }
+
+        public int Player2Score { get; set; }
+
+        public bool UpdatedPlayer1Score { get; set; }
+
+        public bool UpdatedPlayer2Score { get; set; }
+
 
         public Game()
         {
@@ -58,15 +71,16 @@ namespace OverflowBackend.Services
     {
         private static List<Game> games = new List<Game>();
         static readonly object locker = new object();
+        private static IScoreService _scoreService;
 
-        public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext)
+        public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext, IScoreService scoreService)
         {
             /* */
             
             string gameId = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
             string players = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[2];
             string playerName = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[3];
-
+            _scoreService = scoreService;
      
             await HandleWebSocketRequest(webSocket, gameId, players, playerName);
         
@@ -170,6 +184,16 @@ namespace OverflowBackend.Services
                         newGame.Player2Socket = null;
                         newGame.Player1TimeoutEvent += OnPlayer1Timeout;
                         newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+                        var player1Score = _scoreService.GetPlayerScore(playerName);
+                        if (player1Score.HasValue)
+                        {
+                            newGame.Player1Score = player1Score.Value;
+                        }
+                        else
+                        {
+                            throw new ApplicationException("Could not get player 1 rank");
+                        }
+                        
 
                         newGame.BoardLogic = new BoardLogic();
                         games.Add(newGame);
@@ -182,6 +206,17 @@ namespace OverflowBackend.Services
                         newGame.Player1Socket = null;
                         newGame.Player1TimeoutEvent += OnPlayer1Timeout;
                         newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+
+                        var player2Score = _scoreService.GetPlayerScore(playerName);
+                        if (player2Score.HasValue)
+                        {
+                            newGame.Player2Score = player2Score.Value;
+                        }
+                        else
+                        {
+                            throw new ApplicationException("Could not get player 2 rank");
+                        }
+
                         newGame.BoardLogic = new BoardLogic();
                         games.Add(newGame);
                         game = newGame;
@@ -227,6 +262,26 @@ namespace OverflowBackend.Services
             
         }
 
+        private static async Task UpdatePlayerScore(int player, Game game, bool win)
+        {
+            if(player == 1)
+            {
+                if (!game.UpdatedPlayer1Score)
+                {
+                    game.UpdatedPlayer1Score = true;
+                    await _scoreService.UpdateScore(game.Player1, game.Player2, win);
+                }
+            }
+            else if (player == 2)
+            {
+                if (!game.UpdatedPlayer2Score)
+                {
+                    game.UpdatedPlayer2Score = true;
+                    await _scoreService.UpdateScore(game.Player2, game.Player1, win);
+                }
+            }
+        }
+
         private static async Task ListenOnSocketPlayer1(Game game)
         {
             byte[] msg = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(game.BoardLogic.BoardData));
@@ -260,8 +315,10 @@ namespace OverflowBackend.Services
                             if(game.BoardLogic.playerTwoAvailableMoves.Count == 0 && receivedDataString != "opponent")
                             {
                                 byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
+                                await UpdatePlayerScore(1, game, true);
                                 await game.Player1Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                                 byte[] lostMsg = Encoding.UTF8.GetBytes("You lost");
+                                await UpdatePlayerScore(2, game, false);
                                 await game.Player2Socket.SendAsync(new ArraySegment<byte>(lostMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                                 game.Player1Timer.Close();
                                 game.Player2Timer.Close();
@@ -310,6 +367,8 @@ namespace OverflowBackend.Services
             try
             {
                 byte[] msgBuffer = Encoding.UTF8.GetBytes("Opponent left");
+                await UpdatePlayerScore(1, game, false);
+                await UpdatePlayerScore(2, game, true);
                 await game.Player2Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
             }
             catch { }
@@ -353,8 +412,10 @@ namespace OverflowBackend.Services
                             if (game.BoardLogic.playerOneAvailableMoves.Count == 0 && receivedDataString != "opponent")
                             {
                                 byte[] wonMsg = Encoding.UTF8.GetBytes("You won");
+                                await UpdatePlayerScore(2, game, true);
                                 await game.Player2Socket.SendAsync(new ArraySegment<byte>(wonMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                                 byte[] lostMsg = Encoding.UTF8.GetBytes("You lost");
+                                await UpdatePlayerScore(1, game, false);
                                 await game.Player1Socket.SendAsync(new ArraySegment<byte>(lostMsg), WebSocketMessageType.Text, true, CancellationToken.None);
                                 game.Player1Timer.Close();
                                 game.Player2Timer.Close();
@@ -406,6 +467,8 @@ namespace OverflowBackend.Services
             try
             {
                 byte[] msgBuffer = Encoding.UTF8.GetBytes("Opponent left");
+                await UpdatePlayerScore(1, game, true);
+                await UpdatePlayerScore(2, game, false);
                 await game.Player1Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
             }
             catch { }

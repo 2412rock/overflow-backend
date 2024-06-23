@@ -70,30 +70,16 @@ builder.Services.AddCors(options =>
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
+builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
-string hostIp = "";
-try
-{
-    IPAddress[] addresses = Dns.GetHostAddresses("host.docker.internal");
-    if (addresses.Length > 0)
-    {
-        // we are running in docker
-        hostIp = addresses[0].ToString();
-    }
-}
-catch
-{
+var env = builder.Environment.EnvironmentName;
+string hostIp = env == "Development" ? "192.168.1.134" : "10.132.0.4";
 
-    if (String.IsNullOrEmpty(hostIp))
-    {
-        hostIp = "192.168.1.125";
-    }
-}
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
-    options.UseSqlServer($"Server=10.132.0.4,1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+    options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 var app = builder.Build();
 
 app.UseCors("AllowAnyOrigin");
@@ -115,7 +101,12 @@ app.Use(async (context, next) =>
     if (context.WebSockets.IsWebSocketRequest)
     {
         WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        await WebSocketHandler.HandleWebSocketRequest(webSocket, context);
+        using (var scope = app.Services.CreateScope())
+        {
+            var scoreService = scope.ServiceProvider.GetRequiredService<IScoreService>();
+            
+            await WebSocketHandler.HandleWebSocketRequest(webSocket, context, scoreService);
+        }
     }
     else
     {
