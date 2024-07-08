@@ -19,7 +19,7 @@ namespace OverflowBackend.Services.Implementantion
         public async Task<Maybe<List<Score>>> GetHighScores()
         {
             var maybe = new Maybe<List<Score>> ();
-            var top10 =  await _dbContext.Users.OrderBy(e => e.Rank).Select(e => new Score() { Username = e.Username, Rank = e.Rank }).Take(10).ToListAsync();
+            var top10 =  await _dbContext.Users.OrderByDescending(e => e.Rank).Select(e => new Score() { Username = e.Username, Rank = e.Rank }).Take(10).ToListAsync();
             maybe.SetSuccess(top10);
             return maybe;
         }
