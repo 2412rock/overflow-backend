@@ -20,7 +20,7 @@ builder.WebHost.UseKestrel(options =>
     }*/);
     options.Listen(IPAddress.Any, 4200, listenOptions =>
     {
-        try
+        /*try
         {
             // docker
             listenOptions.UseHttps("/app/backendcertificate.pfx"); //Environment.GetEnvironmentVariable("PFX_PASS")
@@ -29,7 +29,7 @@ builder.WebHost.UseKestrel(options =>
         {
             // local
             listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
-        }
+        }*/
 
     });
 });
