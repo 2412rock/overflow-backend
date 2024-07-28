@@ -75,7 +75,7 @@ builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 var env = builder.Environment.EnvironmentName;
-string hostIp = env == "Development" ? "192.168.1.134" : "10.132.0.4";
+string hostIp = env == "Development" ? "192.168.1.134" : "192.168.1.159";
 
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
