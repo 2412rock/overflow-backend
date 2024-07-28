@@ -23,7 +23,7 @@ builder.WebHost.UseKestrel(options =>
         try
         {
             // docker
-            listenOptions.UseHttps("/app/backendcertificate.pfx", Environment.GetEnvironmentVariable("PFX_PASS")); //Environment.GetEnvironmentVariable("PFX_PASS")
+            listenOptions.UseHttps("/app/backendcertificate.pfx"); //Environment.GetEnvironmentVariable("PFX_PASS")
         }
         catch
         {
