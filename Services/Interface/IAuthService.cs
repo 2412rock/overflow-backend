@@ -1,4 +1,5 @@
-﻿using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
+﻿using OverflowBackend.Models.Response;
+using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 
 namespace OverflowBackend.Services.Interface
 {
@@ -8,8 +9,10 @@ namespace OverflowBackend.Services.Interface
 
         public Task<Maybe<bool>> SignUp(string username, string password, string? email);
 
-        public Task<Maybe<string[]>> SignIn(string username, string password);
+        public Task<Maybe<Tokens>> SignIn(string username, string password);
 
         public Task<Maybe<string>> RefreshToken(string token);
+
+        public Task<Maybe<Tokens>> LoginGoogle(string email, string? username, string idToken);
     }
 }
