@@ -10,7 +10,7 @@ using System.Net.WebSockets;
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options =>
 {
-    options.Listen(IPAddress.Parse("192.168.1.125"), 4500 /*listenOptions => //IPAddress.Parse("192.168.1.125")
+    options.Listen(IPAddress.Any, 4500 /*listenOptions => //IPAddress.Parse("192.168.1.125")
     {
 
             // local
