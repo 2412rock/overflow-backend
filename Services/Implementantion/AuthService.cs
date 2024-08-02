@@ -117,7 +117,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     if(username != null)
                     {
-                        await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username });
+                        await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username, Rank = 1000 });
                         _dbContext.SaveChanges();
                     }
                     else
@@ -127,11 +127,16 @@ namespace OverflowBackend.Services.Implementantion
                     }
                 }
                 user = user == null ?  await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email): user;
-
+                if(user == null)
+                {
+                    response.SetException("could not find user");
+                    return response;
+                }
                 response.SetSuccess(new Tokens() 
                 {
-                    BearerToken =  TokenHelper.GenerateJwtToken(email, true), 
-                    RefreshToken =  TokenHelper.GenerateJwtToken(email, isAdmin: false)
+                    BearerToken =  TokenHelper.GenerateJwtToken(user.Username, true), 
+                    RefreshToken =  TokenHelper.GenerateJwtToken(user.Username, isAdmin: false),
+                    Username = user.Username
                 });
             }
             else
