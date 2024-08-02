@@ -53,7 +53,7 @@ namespace OverflowBackend.Controllers
         public async Task<IActionResult> LoginGoogle(LoginGoogleRequest request)
         {
             var result = await _authService.LoginGoogle(request.Email, request.Username, request.IdToken);
-            return Ok("plm");
+            return Ok(result);
         }
     }
 }

@@ -23,10 +23,9 @@ namespace OverflowBackend.Services.Implementantion
 
         public async Task<Maybe<Tokens>> SignIn(string username, string password)
         {
-            Console.WriteLine($"Loggin in with username {username} {password}");
             var maybe = new Maybe<Tokens>();
             var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
-            Console.WriteLine($"Got user {user}");
+
             if (user != null)
             {
                 var hashedPassword = user.Password;
