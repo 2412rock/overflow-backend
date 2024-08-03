@@ -10,27 +10,8 @@ using System.Net.WebSockets;
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseKestrel(options =>
 {
-    options.Listen(IPAddress.Any, 4500 /*listenOptions => //IPAddress.Parse("192.168.1.125")
-    {
-
-            // local
-            listenOptions.UseHttps("C:/Users/Adi/Desktop/dev certs overflow/certificate.pfx", "password");
-        
-
-    }*/);
     options.Listen(IPAddress.Any, 4200, listenOptions =>
     {
-        /*try
-        {
-            // docker
-            listenOptions.UseHttps("/app/backendcertificate.pfx"); //Environment.GetEnvironmentVariable("PFX_PASS")
-        }
-        catch
-        {
-            // local
-            listenOptions.UseHttps("C:/Users/Adi/Desktop/certs/backendcertificate.pfx");
-        }*/
-
     });
 });
 
