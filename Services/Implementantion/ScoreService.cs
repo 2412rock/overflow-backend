@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using OverflowBackend.Models.DB;
 using OverflowBackend.Models.Response;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
@@ -18,11 +19,21 @@ namespace OverflowBackend.Services.Implementantion
 
         public async Task<Maybe<List<Score>>> GetHighScores()
         {
-            var maybe = new Maybe<List<Score>> ();
-            var top10 =  await _dbContext.Users.OrderByDescending(e => e.Rank).Select(e => new Score() { Username = e.Username, Rank = e.Rank }).Take(10).ToListAsync();
-            maybe.SetSuccess(top10);
+            var maybe = new Maybe<List<Score>>();
+
+            var top10Scores = await _dbContext.Users
+                .FromSqlRaw(
+                    @"SELECT TOP 10 Username, Rank
+              FROM Users
+              WHERE Rank IS NOT NULL
+              ORDER BY Rank DESC, UserId ASC")
+                .Select(e => new Score { Username = e.Username, Rank = e.Rank })
+                .ToListAsync();
+
+            maybe.SetSuccess(top10Scores);
             return maybe;
         }
+
 
         public async Task<Maybe<Score>> GetPlayerScoreAsync(string username)
         {
@@ -38,6 +49,34 @@ namespace OverflowBackend.Services.Implementantion
             }
             return maybe;
         }
+
+        public async Task<Maybe<int>> GetPlayerRank(string username)
+        {
+            var maybe = new Maybe<int>();
+
+            // Fetch the user with the provided username
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user != null)
+            {
+                // Calculate the user's rank
+                var rankQuery = await _dbContext.Users
+                    .Where(u => u.Rank > user.Rank || (u.Rank == user.Rank && u.UserId < user.UserId))
+                    .CountAsync();
+
+                // The rank is the count + 1
+                int userRank = rankQuery + 1;
+                maybe.SetSuccess(userRank);
+            }
+            else
+            {
+                maybe.SetException("Cannot find user score.");
+            }
+
+            return maybe;
+        }
+
+
 
         public int? GetPlayerScore(string username)
         {

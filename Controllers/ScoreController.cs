@@ -28,5 +28,13 @@ namespace OverflowBackend.Controllers
             var result = await _scoreService.GetPlayerScoreAsync((string)HttpContext.Items["username"]);
             return Ok(result);
         }
+
+        [Route("api/getMyRank")]
+        [AuthorizationFilter]
+        public async Task<IActionResult> GetMyRank()
+        {
+            var result = await _scoreService.GetPlayerRank((string)HttpContext.Items["username"]);
+            return Ok(result);
+        }
     }
 }

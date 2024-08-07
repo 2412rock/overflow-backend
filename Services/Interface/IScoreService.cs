@@ -10,6 +10,8 @@ namespace OverflowBackend.Services.Interface
 
         public Task<Maybe<Score>> GetPlayerScoreAsync(string username);
 
+        public Task<Maybe<int>> GetPlayerRank(string username);
+
         public int? GetPlayerScore(string username);
 
         public Task UpdateScore(string username, string opponentUsername, bool win);
