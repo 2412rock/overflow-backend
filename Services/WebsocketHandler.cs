@@ -56,14 +56,15 @@ namespace OverflowBackend.Services
         public bool Player1Connected { get; set; }
         public bool Player2Connected { get; set; }
 
+        public readonly object LockeUpdateScores = new object();
 
         public Game()
         {
-            Player1Timer = new Timer(120000); // 120000 120 seconds in milliseconds
+            Player1Timer = new Timer(10000); // 120000 120 seconds in milliseconds
             Player1Timer.Elapsed += OnPlayer1Timeout;
             Player1Timer.AutoReset = false;
 
-            Player2Timer = new Timer(120000); // 120 seconds in milliseconds
+            Player2Timer = new Timer(10000); // 120 seconds in milliseconds
             Player2Timer.Elapsed += OnPlayer2Timeout;
             Player2Timer.AutoReset = false;
 
@@ -103,7 +104,6 @@ namespace OverflowBackend.Services
     {
         private static List<Game> games = new List<Game>();
         static readonly object locker = new object();
-        static readonly object lockerConnected = new object();
         private static IScoreService _scoreService;
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext, IScoreService scoreService)
@@ -138,6 +138,9 @@ namespace OverflowBackend.Services
                     game.Player2TimerFirstMove.Close();
                     game.Player1Timer.Close();
                     game.Player2Timer.Close();
+                    game.GameOver = true;
+                    await UpdatePlayerScore(1, game, false);
+                    await UpdatePlayerScore(2, game, true);
                     games.Remove(game);
                 }).Wait();
             }
@@ -162,6 +165,10 @@ namespace OverflowBackend.Services
                     game.Player2TimerFirstMove.Close();
                     game.Player1Timer.Close();
                     game.Player2Timer.Close();
+                    game.GameOver = true;
+                    game.UpdatedPlayer1Score = true;
+                    game.UpdatedPlayer2Score = true;
+
                     games.Remove(game);
                 }).Wait();
             }
@@ -186,6 +193,9 @@ namespace OverflowBackend.Services
                     game.Player2TimerFirstMove.Close();
                     game.Player1Timer.Close();
                     game.Player2Timer.Close();
+                    game.GameOver = true;
+                    game.UpdatedPlayer1Score = true;
+                    game.UpdatedPlayer2Score = true;
                     games.Remove(game);
                 }).Wait();
             }
@@ -210,6 +220,9 @@ namespace OverflowBackend.Services
                     game.Player2TimerFirstMove.Close();
                     game.Player1Timer.Close();
                     game.Player2Timer.Close();
+                    game.GameOver = true;
+                    await UpdatePlayerScore(1, game, true);
+                    await UpdatePlayerScore(2, game, false);
                     games.Remove(game);
                 }).Wait();
             }
@@ -354,22 +367,29 @@ namespace OverflowBackend.Services
 
         private static async Task UpdatePlayerScore(int player, Game game, bool win)
         {
-            if(player == 1)
+            lock (game.LockeUpdateScores)
             {
-                if (!game.UpdatedPlayer1Score)
+                Task.Run(async () =>
                 {
-                    game.UpdatedPlayer1Score = true;
-                    await _scoreService.UpdateScore(game.Player1, game.Player2, win);
-                }
+                    if (player == 1)
+                    {
+                        if (!game.UpdatedPlayer1Score)
+                        {
+                            game.UpdatedPlayer1Score = true;
+                            await _scoreService.UpdateScore(game.Player1, game.Player2, win);
+                        }
+                    }
+                    else if (player == 2)
+                    {
+                        if (!game.UpdatedPlayer2Score)
+                        {
+                            game.UpdatedPlayer2Score = true;
+                            await _scoreService.UpdateScore(game.Player2, game.Player1, win);
+                        }
+                    }
+                }).Wait();
             }
-            else if (player == 2)
-            {
-                if (!game.UpdatedPlayer2Score)
-                {
-                    game.UpdatedPlayer2Score = true;
-                    await _scoreService.UpdateScore(game.Player2, game.Player1, win);
-                }
-            }
+            
         }
 
         private static async Task ListenOnSocketPlayer1(Game game)
@@ -550,7 +570,7 @@ namespace OverflowBackend.Services
                         var allowedMove = false;
                         if(parts != null && parts.Length == 2)
                         {
-                            game.Player2Timer.Start();
+                            //game.Player2Timer.Start();
                             allowedMove = game.BoardLogic.MovePlayer(int.Parse(parts[0]), int.Parse(parts[1]));
                         }
                         if(receivedDataString == "opponent" || allowedMove)
