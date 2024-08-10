@@ -91,12 +91,12 @@ namespace OverflowBackend.Services
 
         private void OnPlayer1TimeoutFirstMove(object sender, ElapsedEventArgs e)
         {
-            Player1TimeoutEvent?.Invoke(this, EventArgs.Empty);
+            Player1TimeoutEventFirstMove?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnPlayer2TimeoutFirstMove(object sender, ElapsedEventArgs e)
         {
-            Player2TimeoutEvent?.Invoke(this, EventArgs.Empty);
+            Player2TimeoutEventFirstMove?.Invoke(this, EventArgs.Empty);
         }
     }
     public static class WebSocketHandler
@@ -145,7 +145,7 @@ namespace OverflowBackend.Services
 
         private static void OnPlayer1TimeoutFirstMove(object sender, EventArgs e)
         {
-           /* if (sender is Game game)
+            if (sender is Game game)
             {
                 byte[] msg = Encoding.UTF8.GetBytes("Player 1 did not make first move");
                 Task.Run(async () =>
@@ -164,12 +164,12 @@ namespace OverflowBackend.Services
                     game.Player2Timer.Close();
                     games.Remove(game);
                 }).Wait();
-            }*/
+            }
         }
 
         private static void OnPlayer2TimeoutFirstMove(object sender, EventArgs e)
         {
-            /*if (sender is Game game)
+            if (sender is Game game)
             {
                 byte[] msg = Encoding.UTF8.GetBytes("Player 2 did not make first move");
                 Task.Run(async () =>
@@ -188,7 +188,7 @@ namespace OverflowBackend.Services
                     game.Player2Timer.Close();
                     games.Remove(game);
                 }).Wait();
-            }*/
+            }
         }
 
         private static void OnPlayer2Timeout(object sender, EventArgs e)
@@ -269,6 +269,9 @@ namespace OverflowBackend.Services
                         newGame.Player2Socket = null;
                         newGame.Player1TimeoutEvent += OnPlayer1Timeout;
                         newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+                        newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
+                        newGame.Player2TimeoutEventFirstMove += OnPlayer2TimeoutFirstMove;
+
                         var player1Score = _scoreService.GetPlayerScore(playerName);
                         if (player1Score.HasValue)
                         {
@@ -291,6 +294,8 @@ namespace OverflowBackend.Services
                         newGame.Player1Socket = null;
                         newGame.Player1TimeoutEvent += OnPlayer1Timeout;
                         newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+                        newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
+                        newGame.Player2TimeoutEventFirstMove += OnPlayer2TimeoutFirstMove;
 
                         var player2Score = _scoreService.GetPlayerScore(playerName);
                         if (player2Score.HasValue)
