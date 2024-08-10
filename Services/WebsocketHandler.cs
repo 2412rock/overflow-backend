@@ -103,6 +103,7 @@ namespace OverflowBackend.Services
     {
         private static List<Game> games = new List<Game>();
         static readonly object locker = new object();
+        static readonly object lockerConnected = new object();
         private static IScoreService _scoreService;
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext, IScoreService scoreService)
@@ -414,15 +415,16 @@ namespace OverflowBackend.Services
                                     // Received message opponent from player 1, need to send it back to player 2 and start the first move timer
                                     if (!game.Player1TimerFirstMove.Enabled)
                                     {
-                                        game.Player1TimerFirstMove.Start();
-                                        game.Player1TimerStartFirstMove = DateTime.UtcNow;
-
+                                        game.Player1Connected = true;
                                         // send the opponent message
                                         await game.Player2Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                                            
+                                        var bothPlayerConnected = game.Player1Connected && game.Player2Connected;
 
-                                        game.Player1Connected = true;
-                                        if(game.Player1Connected && game.Player2Connected)
+                                        if (bothPlayerConnected)
                                         {
+                                            game.Player1TimerFirstMove.Start();
+                                            game.Player1TimerStartFirstMove = DateTime.UtcNow;
                                             //Notify both players that the first move timer for player 1 player has started
                                             var timeStartByteArray = Encoding.UTF8.GetBytes("start first move:" + game.Player1TimerStartFirstMove.ToString("o"));
                                             await game.Player1Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
@@ -566,14 +568,16 @@ namespace OverflowBackend.Services
                                     // Received message opponent from player 2, need to send it back to player 1 and start the first move timer
                                     if (!game.Player1TimerFirstMove.Enabled)
                                     {
-                                        game.Player1TimerFirstMove.Start();
-                                        game.Player1TimerStartFirstMove = DateTime.UtcNow;
-
+                                        game.Player2Connected = true;
                                         // send the opponent message
                                         await game.Player1Socket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
-                                        game.Player2Connected = true;
-                                        if(game.Player1Connected && game.Player2Connected)
+                                            
+                                        var bothPlayersConnected = game.Player1Connected && game.Player2Connected;
+                                        
+                                        if (bothPlayersConnected)
                                         {
+                                            game.Player1TimerFirstMove.Start();
+                                            game.Player1TimerStartFirstMove = DateTime.UtcNow;
                                             //Notify both players that the first move timer for player 1 player has started
                                             var timeStartByteArray = Encoding.UTF8.GetBytes("start first move:" + game.Player1TimerStartFirstMove.ToString("o"));
                                             await game.Player1Socket.SendAsync(new ArraySegment<byte>(timeStartByteArray, 0, timeStartByteArray.Length), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
