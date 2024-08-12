@@ -31,29 +31,19 @@ namespace OverflowBackend.Services
 
         public Timer Player1TimerFirstMove { get; set; }
         public Timer Player2TimerFirstMove { get; set; }
-        // Add additional game state properties as needed
-
         public event EventHandler Player1TimeoutEvent;
         public event EventHandler Player2TimeoutEvent;
-
         public event EventHandler Player1TimeoutEventFirstMove;
         public event EventHandler Player2TimeoutEventFirstMove;
-
         public DateTime Player1TimerStart { get; set; }
         public DateTime Player2TimerStart { get; set; }
         public DateTime Player1TimerStartFirstMove { get; set; }
         public DateTime Player2TimerStartFirstMove { get; set; }
-
         public bool GameOver { get; set; }
-
         public int Player1Score { get; set; }
-
         public int Player2Score { get; set; }
-
         public bool UpdatedPlayer1Score { get; set; }
-
         public bool UpdatedPlayer2Score { get; set; }
-
         public bool Player1Connected { get; set; }
         public bool Player2Connected { get; set; }
 
@@ -61,7 +51,7 @@ namespace OverflowBackend.Services
 
         public Game()
         {
-            Player1Timer = new Timer(10000); // 120000 120 seconds in milliseconds
+            Player1Timer = new Timer(120000); // 10 seconds
             Player1Timer.Elapsed += OnPlayer1Timeout;
             Player1Timer.AutoReset = false;
 
@@ -69,11 +59,11 @@ namespace OverflowBackend.Services
             Player2Timer.Elapsed += OnPlayer2Timeout;
             Player2Timer.AutoReset = false;
 
-            Player1TimerFirstMove = new Timer(10000); // 120000 120 seconds in milliseconds
+            Player1TimerFirstMove = new Timer(120000); // 120000 120 seconds in milliseconds
             Player1TimerFirstMove.Elapsed += OnPlayer1TimeoutFirstMove;
             Player1TimerFirstMove.AutoReset = false;
 
-            Player2TimerFirstMove = new Timer(10000); // 120 seconds in milliseconds
+            Player2TimerFirstMove = new Timer(10000); // 10 seconds
             Player2TimerFirstMove.Elapsed += OnPlayer2TimeoutFirstMove;
             Player2TimerFirstMove.AutoReset = false;
 
@@ -115,7 +105,6 @@ namespace OverflowBackend.Services
             _scoreService = scoreService;
      
             await HandleWebSocketRequest(webSocket, gameId, players, playerName);
-        
         }
 
         private static void OnPlayer1Timeout(object sender, EventArgs e)
@@ -229,114 +218,122 @@ namespace OverflowBackend.Services
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string players, string playerName)
         {
-            var gameFound = false;
-            if(GameCollection.List != null)
-            {
-                foreach(var element in GameCollection.List)
-                {
-                    if(element == gameId)
-                    {
-                        gameFound = true;
-                        break;
-                    }
-                }
-            }
-            if (!gameFound)
-            {
-                // Invalid request
-                return;
-            }
-            var player1 = false;
+            if (!IsValidGameRequest(gameId)) return;
+
             Game game;
+            bool isPlayer1;
+
             lock (locker)
             {
-                game = games.Where(game => game.GameId == gameId && (game.Player1 != null || game.Player2 != null) ).FirstOrDefault();
-                if (game != null)
-                {
-                    
-                    var playersSplit = players.Split("-");
-                    if (playersSplit[0] == playerName)
-                    {
-                        player1 = true;
-                        game.Player1 = playerName;
-                        game.Player1Socket = webSocket;
-                    }
-                    else
-                    {
-                        game.Player2 = playerName;
-                        game.Player2Socket = webSocket;
-                    }
-                    
-                }
-                else
-                {
-                    var newGame = new Game();
-                    newGame.GameId = gameId;
-                    var playersSplit = players.Split("-");
-                    if (playersSplit[0] == playerName)
-                    {
-                        player1 = true;
-                        newGame.Player1 = playerName;
-                        newGame.Player1Socket = webSocket;
-                        newGame.Player2Socket = null;
-                        newGame.Player1TimeoutEvent += OnPlayer1Timeout;
-                        newGame.Player2TimeoutEvent += OnPlayer2Timeout;
-                        newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
-                        newGame.Player2TimeoutEventFirstMove += OnPlayer2TimeoutFirstMove;
-
-                        var player1Score = _scoreService.GetPlayerScore(playerName);
-                        if (player1Score.HasValue)
-                        {
-                            newGame.Player1Score = player1Score.Value;
-                        }
-                        else
-                        {
-                            throw new ApplicationException("Could not get player 1 rank");
-                        }
-                        
-
-                        newGame.BoardLogic = new BoardLogic();
-                        games.Add(newGame);
-                        game = newGame;
-                    }
-                    else
-                    {
-                        newGame.Player2 = playerName;
-                        newGame.Player2Socket = webSocket;
-                        newGame.Player1Socket = null;
-                        newGame.Player1TimeoutEvent += OnPlayer1Timeout;
-                        newGame.Player2TimeoutEvent += OnPlayer2Timeout;
-                        newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
-                        newGame.Player2TimeoutEventFirstMove += OnPlayer2TimeoutFirstMove;
-
-                        var player2Score = _scoreService.GetPlayerScore(playerName);
-                        if (player2Score.HasValue)
-                        {
-                            newGame.Player2Score = player2Score.Value;
-                        }
-                        else
-                        {
-                            throw new ApplicationException("Could not get player 2 rank");
-                        }
-
-                        newGame.BoardLogic = new BoardLogic();
-                        games.Add(newGame);
-                        game = newGame;
-                    }
-                    
-
-                }
+                game = FindOrCreateGame(gameId, players, playerName, webSocket, out isPlayer1);
             }
 
-            if (!player1)
+            if (game == null) return;
+
+            await StartListeningOnSocket(game, isPlayer1);
+        }
+
+        private static bool IsValidGameRequest(string gameId)
+        {
+            return GameCollection.List != null && GameCollection.List.Contains(gameId);
+        }
+
+        private static Game FindOrCreateGame(string gameId, string players, string playerName, WebSocket webSocket, out bool isPlayer1)
+        {
+            var game = games.FirstOrDefault(g => g.GameId == gameId && (g.Player1 != null || g.Player2 != null));
+            if (game != null)
             {
-                await ListenOnSocketPlayer2(game);
+                return AssignPlayerToGame(game, players, playerName, webSocket, out isPlayer1);
             }
             else
             {
-                await ListenOnSocketPlayer1(game);
+                return CreateNewGame(gameId, players, playerName, webSocket, out isPlayer1);
             }
         }
+
+        private static Game AssignPlayerToGame(Game game, string players, string playerName, WebSocket webSocket, out bool isPlayer1)
+        {
+            var playersSplit = players.Split("-");
+            if (playersSplit[0] == playerName)
+            {
+                isPlayer1 = true;
+                game.Player1 = playerName;
+                game.Player1Socket = webSocket;
+            }
+            else
+            {
+                isPlayer1 = false;
+                game.Player2 = playerName;
+                game.Player2Socket = webSocket;
+            }
+
+            return game;
+        }
+
+        private static Game CreateNewGame(string gameId, string players, string playerName, WebSocket webSocket, out bool isPlayer1)
+        {
+            var newGame = new Game
+            {
+                GameId = gameId,
+                
+                BoardLogic = new BoardLogic()
+            };
+
+            newGame.Player1TimeoutEvent += OnPlayer1Timeout;
+            newGame.Player2TimeoutEvent += OnPlayer2Timeout;
+            newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
+            newGame.Player2TimeoutEventFirstMove += OnPlayer2TimeoutFirstMove;
+
+            var playersSplit = players.Split("-");
+            if (playersSplit[0] == playerName)
+            {
+                isPlayer1 = true;
+                newGame.Player1 = playerName;
+                newGame.Player1Socket = webSocket;
+                SetPlayerScore(newGame, playerName, isPlayer1);
+            }
+            else
+            {
+                isPlayer1 = false;
+                newGame.Player2 = playerName;
+                newGame.Player2Socket = webSocket;
+                SetPlayerScore(newGame, playerName, isPlayer1);
+            }
+
+            games.Add(newGame);
+            return newGame;
+        }
+
+        private static void SetPlayerScore(Game game, string playerName, bool isPlayer1)
+        {
+            var playerScore = _scoreService.GetPlayerScore(playerName);
+            if (!playerScore.HasValue)
+            {
+                throw new ApplicationException($"Could not get player {(isPlayer1 ? "1" : "2")} rank");
+            }
+
+            if (isPlayer1)
+            {
+                game.Player1Score = playerScore.Value;
+            }
+            else
+            {
+                game.Player2Score = playerScore.Value;
+            }
+        }
+
+        private static async Task StartListeningOnSocket(Game game, bool isPlayer1)
+        {
+            if (isPlayer1)
+            {
+                await ListenOnSocketPlayer1(game);
+            }
+            else
+            {
+                await ListenOnSocketPlayer2(game);
+            }
+        }
+
 
         private static async Task UpdatePlayerScore(int player, Game game, bool win)
         {
