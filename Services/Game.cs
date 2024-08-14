@@ -40,15 +40,15 @@ namespace OverflowBackend.Services
 
         public Game()
         {
-            Player1Timer = new Timer(120000); // 10 seconds
+            Player1Timer = new Timer(120000); // 120 seconds in milliseconds
             Player1Timer.Elapsed += OnPlayer1Timeout;
             Player1Timer.AutoReset = false;
 
-            Player2Timer = new Timer(10000); // 120 seconds in milliseconds
+            Player2Timer = new Timer(120000); // 120 seconds in milliseconds
             Player2Timer.Elapsed += OnPlayer2Timeout;
             Player2Timer.AutoReset = false;
 
-            Player1TimerFirstMove = new Timer(120000); // 120000 120 seconds in milliseconds
+            Player1TimerFirstMove = new Timer(10000); // 120000 120 seconds in milliseconds
             Player1TimerFirstMove.Elapsed += OnPlayer1TimeoutFirstMove;
             Player1TimerFirstMove.AutoReset = false;
 
