@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.SqlServer.Server;
 using OverflowBackend.Helpers;
 using OverflowBackend.Models.DB;
@@ -21,9 +22,61 @@ namespace OverflowBackend.Services.Implementantion
             _passwordHashService = passwordHashService;
         }
 
+        private bool IsValidEmail(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return true;
+            }
+
+            // Check if all characters are either alphanumeric or dots and the length is within 14 characters
+            bool isValid = input.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '@') && input.Length <= 30;
+            var atChars = input.Count(c => c == '@');
+            if (atChars > 1)
+            {
+                return false;
+            }
+
+            return isValid;
+        }
+
+        private bool IsValidUsername(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return true;
+            }
+
+            // Check if all characters are either alphanumeric or dots and the length is within 14 characters
+            bool isValid = input.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '-') && input.Length <= 14;
+
+            return isValid;
+        }
+
+        private bool IsValidPassword(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return false;
+            }
+
+            // Define allowed characters (A-Z, a-z, 0-9, and specified special characters)
+            const string allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:'\",<.>/?|\\~`+";
+
+            // Check if all characters in the input are part of the allowed characters
+            bool isValid = input.All(c => allowedCharacters.Contains(c)) && input.Length <= 20;
+
+            return isValid;
+        }
+
         public async Task<Maybe<Tokens>> SignIn(string username, string password)
         {
             var maybe = new Maybe<Tokens>();
+            if (!IsValidUsername(username) || !IsValidPassword(password))
+            {
+                maybe.SetException("Username or password too long");
+                return maybe;
+            }
             var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
 
             if (user != null)
@@ -53,6 +106,16 @@ namespace OverflowBackend.Services.Implementantion
         public async Task<Maybe<bool>> SignUp(string username, string password, string? email) 
         {
             var maybe = new Maybe<bool>();
+            if(!IsValidUsername(username) || !IsValidPassword(password))
+            {
+                maybe.SetException("Username or password too long");
+                return maybe;
+            }
+            if(!email.IsNullOrEmpty() && !IsValidEmail(email))
+            {
+                maybe.SetException("Email invalid");
+                return maybe;
+            }
             var any = await _dbContext.Users.AnyAsync(element => element.Username == username);
             if (!any)
             {
@@ -60,7 +123,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     Username = username,
                     Password = _passwordHashService.HashPassword(password),
-                    Email = "",
+                    Email = email,
                     Rank = 1000,
                     NumberOfGames = 0
                 };
@@ -78,6 +141,11 @@ namespace OverflowBackend.Services.Implementantion
         public async Task<Maybe<bool>> UserNameExists(string username)
         {
             var maybe = new Maybe<bool>();
+            if (username.Length > 14)
+            {
+                maybe.SetException("Username too long");
+                return maybe;
+            }
             var value =  await _dbContext.Users.AnyAsync(element => element.Username == username);
             maybe.SetSuccess(value);
             return maybe;
@@ -110,6 +178,11 @@ namespace OverflowBackend.Services.Implementantion
         public async Task<Maybe<Tokens>> LoginGoogle(string email, string? username, string idToken)
         {
             var response = new Maybe<Tokens>();
+            if (username != null && username.Length > 14)
+            {
+                response.SetException("Username too long");
+                return response;
+            }
             var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
             if (VerifyGoogleToken(idToken))
             {
