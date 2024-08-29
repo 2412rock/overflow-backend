@@ -1,7 +1,12 @@
-﻿namespace OverflowBackend.Models.DB
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+namespace OverflowBackend.Models.DB
 {
     public class DBFriend
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int FriendId { get; set; }
         public int UserId { get; set; }
         public int FriendUserId { get; set; }

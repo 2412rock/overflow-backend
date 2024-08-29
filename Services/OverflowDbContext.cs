@@ -9,6 +9,5 @@ namespace OverflowBackend.Services
         { }
             public DbSet<DBUser> Users { get; set; }
             public DbSet<DBFriend> Friends { get; set; }
-            public DbSet<DBGameInvitation> GameInvitations { get; set; }
     }
 }

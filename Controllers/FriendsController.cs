@@ -26,6 +26,15 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        [AuthorizationFilter]
+        [Route("api/getUsernames")]
+        public async Task<IActionResult> GetUsernames([FromQuery] string startsWith)
+        {
+            var result = await _friendService.GetUsernames((string)HttpContext.Items["username"], startsWith);
+            return Ok(result);
+        }
+
         [HttpPost]
         [AuthorizationFilter]
         [Route("api/sendFriendRequest")]

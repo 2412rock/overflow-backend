@@ -1,5 +1,6 @@
 ﻿using Google;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OverflowBackend.Models.DB;
 using OverflowBackend.Models.Response;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
@@ -7,7 +8,7 @@ using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Services.Implementantion
 {
-    public class FriendService: IFriendService
+    public class FriendService : IFriendService
     {
         private readonly OverflowDbContext _dbContext;
 
@@ -23,12 +24,12 @@ namespace OverflowBackend.Services.Implementantion
             var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
             var friendUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == friendUsername);
 
-            if(myUser == null || friendUser == null)
+            if (myUser == null || friendUser == null)
             {
                 maybe.SetException("Could not find username");
                 return maybe;
             }
-            var any = await _dbContext.Friends.AnyAsync(friend => (friend.UserId == myUser.UserId && friend.FriendUserId == friendUser.UserId) || (friend.UserId == friendUser.UserId && friend.FriendUserId == myUser.UserId) );
+            var any = await _dbContext.Friends.AnyAsync(friend => (friend.UserId == myUser.UserId && friend.FriendUserId == friendUser.UserId) || (friend.UserId == friendUser.UserId && friend.FriendUserId == myUser.UserId));
 
             if (!any)
             {
@@ -48,7 +49,7 @@ namespace OverflowBackend.Services.Implementantion
                 maybe.SetException("Friend relationship already exists");
             }
 
-            
+
             return maybe;
         }
 
@@ -66,7 +67,7 @@ namespace OverflowBackend.Services.Implementantion
                 await _dbContext.SaveChangesAsync();
                 maybe.SetSuccess("Request accepted");
             }
-            
+
             return maybe;
         }
 
@@ -85,6 +86,46 @@ namespace OverflowBackend.Services.Implementantion
             var friendRequests = await _dbContext.Friends.Where(e => e.FriendUserId == myUser.UserId).ToListAsync();
             await AddFriends(friendRequests, myUser.UserId, friends);
             maybe.SetSuccess(friends);
+            return maybe;
+        }
+
+        public async Task<Maybe<List<UserSearchResult>>> GetUsernames(string myUsername, string startsWith)
+        {
+            var maybe = new Maybe<List<UserSearchResult>>();
+            var searchResultsList = new List<UserSearchResult>();
+            if (!startsWith.IsNullOrEmpty())
+            {
+                var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == myUsername);
+                var users = await _dbContext.Users.Where(user => user.Username.ToLower().StartsWith(startsWith)).ToListAsync();
+                foreach(var user in users)
+                {
+                    if(user.Username == myUsername)
+                    {
+                        continue;
+                    }
+
+                    var friendRequestExists = await _dbContext.Friends.AnyAsync(e => e.FriendUserId == user.UserId && e.UserId == myUser.UserId);
+                    if (friendRequestExists)
+                    {
+                        searchResultsList.Add(new UserSearchResult()
+                        {
+                            AlreadyAdded = true,
+                            Username = user.Username,
+                            Rank = user.Rank
+                        });
+                    }
+                    else
+                    {
+                        searchResultsList.Add(new UserSearchResult()
+                        {
+                            AlreadyAdded = false,
+                            Username = user.Username,
+                            Rank = user.Rank
+                        });
+                    }
+                }
+                maybe.SetSuccess(searchResultsList);
+            }
             return maybe;
         }
 
@@ -132,7 +173,7 @@ namespace OverflowBackend.Services.Implementantion
             }
         }
 
-        public async Task<bool> SendGameInvitation(int senderUserId, int receiverUserId)
+        /*public async Task<bool> SendGameInvitation(int senderUserId, int receiverUserId)
         {
             var invitation = new DBGameInvitation
             {
@@ -144,6 +185,6 @@ namespace OverflowBackend.Services.Implementantion
             _dbContext.GameInvitations.Add(invitation);
             await _dbContext.SaveChangesAsync();
             return true;
-        }
+        }*/
     }
 }
