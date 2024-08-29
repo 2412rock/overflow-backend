@@ -51,8 +51,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
+builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
+
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 var env = builder.Environment.EnvironmentName;

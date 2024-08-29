@@ -1,0 +1,149 @@
+﻿using Google;
+using Microsoft.EntityFrameworkCore;
+using OverflowBackend.Models.DB;
+using OverflowBackend.Models.Response;
+using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
+using OverflowBackend.Services.Interface;
+
+namespace OverflowBackend.Services.Implementantion
+{
+    public class FriendService: IFriendService
+    {
+        private readonly OverflowDbContext _dbContext;
+
+        public FriendService(OverflowDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public async Task<Maybe<string>> SendFriendRequest(string username, string friendUsername)
+        {
+            var maybe = new Maybe<string>();
+
+            var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            var friendUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == friendUsername);
+
+            if(myUser == null || friendUser == null)
+            {
+                maybe.SetException("Could not find username");
+                return maybe;
+            }
+            var any = await _dbContext.Friends.AnyAsync(friend => (friend.UserId == myUser.UserId && friend.FriendUserId == friendUser.UserId) || (friend.UserId == friendUser.UserId && friend.FriendUserId == myUser.UserId) );
+
+            if (!any)
+            {
+                var friendRequest = new DBFriend
+                {
+                    UserId = myUser.UserId,
+                    FriendUserId = friendUser.UserId,
+                    Status = FriendRequestStatus.Pending
+                };
+
+                _dbContext.Friends.Add(friendRequest);
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Friend request sent");
+            }
+            else
+            {
+                maybe.SetException("Friend relationship already exists");
+            }
+
+            
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> AcceptFriendRequest(int friendId)
+        {
+            var maybe = new Maybe<string>();
+            var friendRequest = await _dbContext.Friends.FindAsync(friendId);
+            if (friendRequest == null || friendRequest.Status != FriendRequestStatus.Pending)
+            {
+                maybe.SetException("Rquest already accepted");
+            }
+            else
+            {
+                friendRequest.Status = FriendRequestStatus.Accepted;
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Request accepted");
+            }
+            
+            return maybe;
+        }
+
+        public async Task<Maybe<List<Friend>>> GetFriendRequests(string username)
+        {
+            var maybe = new Maybe<List<Friend>>();
+            var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+
+            if (myUser == null)
+            {
+                maybe.SetException("Could not find username");
+                return maybe;
+            }
+
+            var friends = new List<Friend>();
+            var friendRequests = await _dbContext.Friends.Where(e => e.FriendUserId == myUser.UserId).ToListAsync();
+            await AddFriends(friendRequests, myUser.UserId, friends);
+            maybe.SetSuccess(friends);
+            return maybe;
+        }
+
+        public async Task<Maybe<List<Friend>>> GetFriends(string username)
+        {
+            var maybe = new Maybe<List<Friend>>();
+
+            var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+
+            if (myUser == null)
+            {
+                maybe.SetException("Could not find username");
+                return maybe;
+            }
+
+            var friends = new List<Friend>();
+
+            var friendsDB1 = await _dbContext.Friends.Where(e => e.UserId == myUser.UserId).ToListAsync();
+            var friendsDB2 = await _dbContext.Friends.Where(e => e.FriendId == myUser.UserId).ToListAsync();
+
+            await AddFriends(friendsDB1, myUser.UserId, friends);
+            await AddFriends(friendsDB2, myUser.UserId, friends);
+
+            maybe.SetSuccess(friends);
+            return maybe;
+        }
+
+        private async Task AddFriends(List<DBFriend> friendsDB, int ofUserId, List<Friend> friends)
+        {
+            foreach (var friendDB in friendsDB)
+            {
+                if (!friends.Any(e => e.UserID == ofUserId))
+                {
+                    var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserId == friendDB.UserId);
+                    if (user != null)
+                    {
+                        friends.Add(new Friend()
+                        {
+                            UserID = friendDB.UserId,
+                            Username = user.Username,
+                            Score = user.Rank
+                        });
+                    }
+                }
+            }
+        }
+
+        public async Task<bool> SendGameInvitation(int senderUserId, int receiverUserId)
+        {
+            var invitation = new DBGameInvitation
+            {
+                SenderUserId = senderUserId,
+                ReceiverUserId = receiverUserId,
+                Status = FriendRequestStatus.Pending
+            };
+
+            _dbContext.GameInvitations.Add(invitation);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+    }
+}
