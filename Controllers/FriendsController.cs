@@ -44,6 +44,24 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpPut]
+        [AuthorizationFilter]
+        [Route("api/acceptFriendRequest")]
+        public async Task<IActionResult> AcceptFriendRequest([FromBody] FriendRequest request)
+        {
+            var result = await _friendService.AcceptFriendRequest((string)HttpContext.Items["username"], request.FriendUsername);
+            return Ok(result);
+        }
+
+        [HttpPut]
+        [AuthorizationFilter]
+        [Route("api/declineFriendRequest")]
+        public async Task<IActionResult> DeclineFriendRequest([FromBody] FriendRequest request)
+        {
+            var result = await _friendService.DeclineFriendRequest((string)HttpContext.Items["username"], request.FriendUsername);
+            return Ok(result);
+        }
+
         [HttpGet]
         [AuthorizationFilter]
         [Route("api/getFriendRequests")]
