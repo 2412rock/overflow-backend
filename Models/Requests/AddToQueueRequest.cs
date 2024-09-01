@@ -2,6 +2,7 @@
 {
     public class AddToQueueRequest
     {
-        public string Username { get; set; }
+        public bool? Prematch { get; set; }
+        public string? WithUsername { get; set; }
     }
 }

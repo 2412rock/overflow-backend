@@ -52,45 +52,79 @@ namespace OverflowBackend.Services.Implementantion
             
         }
 
-
-        public Maybe<string> AddOrMatchPlayer(string username)
+        private Maybe<string> RandomMatch(string username)
         {
-            lock (locker)
+            var maybe = new Maybe<string>();
+            if (queue.Count == 0)
             {
-                var maybe = new Maybe<string>();
-                if (queue.Count == 0)
-                {
-                    var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
-                    if (GameCollection.List == null)
-                    {
-                        GameCollection.List = new List<string>();
-                    }
-                    GameCollection.List.Add(match.GameId);
-                    queue.Add(match);
-                    maybe.SetSuccess("Added to queue");
-                    return maybe;
-                }
-                else
-                {
-                    foreach(var match in queue)
-                    {
-                        if(match.Player1 != null && match.Player2 == null /*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
-                        {
-                            match.Player2 = username;
-                            maybe.SetSuccess("Matched");
-                            return maybe;
-                        }
-                    }
-                }
-                var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
-                if(GameCollection.List == null)
+                var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
+                if (GameCollection.List == null)
                 {
                     GameCollection.List = new List<string>();
                 }
-                GameCollection.List.Add(newMatch.GameId);
-                queue.Add(newMatch);
+                GameCollection.List.Add(match.GameId);
+                queue.Add(match);
                 maybe.SetSuccess("Added to queue");
                 return maybe;
+            }
+            else
+            {
+                foreach (var match in queue)
+                {
+                    if (match.Player1 != null && match.Player2 == null /*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
+                    {
+                        match.Player2 = username;
+                        maybe.SetSuccess("Matched");
+                        return maybe;
+                    }
+                }
+            }
+            var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
+            if (GameCollection.List == null)
+            {
+                GameCollection.List = new List<string>();
+            }
+            GameCollection.List.Add(newMatch.GameId);
+            queue.Add(newMatch);
+            maybe.SetSuccess("Added to queue");
+            return maybe;
+        }
+
+
+        private Maybe<string> Prematch(string username, string withUsername)
+        {
+            var maybe = new Maybe<string>();
+
+            var anyMatches = queue.Any(e => e.Player1 == username || e.Player2 == username);
+
+            if (!anyMatches)
+            {
+                var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), Player2 = withUsername };
+                if (GameCollection.List == null)
+                {
+                    GameCollection.List = new List<string>();
+                }
+                GameCollection.List.Add(match.GameId);
+                queue.Add(match);
+            }
+
+            maybe.SetSuccess("Added to queue");
+            return maybe;
+        }
+
+
+        public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername)
+        {
+            lock (locker)
+            {
+                if (prematch.HasValue && withUsername != null)
+                {
+                    return Prematch(username, withUsername);
+                }
+                else
+                {
+                    return RandomMatch(username);
+                }
             }
         }
 
