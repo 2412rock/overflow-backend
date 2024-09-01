@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using OverflowBackend.Services;
 using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
 
@@ -51,8 +53,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
+builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
+builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
+builder.Services.AddSignalR();
+
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 var env = builder.Environment.EnvironmentName;
@@ -74,9 +80,14 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
-app.MapControllers();
+app.UseRouting();
+//app.MapControllers();
 app.UseWebSockets();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<GameHub>("/gameHub");  // Map the SignalR hub
+});
 app.Use(async (context, next) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
@@ -96,3 +107,51 @@ app.Use(async (context, next) =>
 });
 
 app.Run();
+
+public class GameHub : Hub
+{
+    // A dictionary to store connections by user ID
+    IConnectionManager _connectionManager;
+    public GameHub(IConnectionManager connectionManager)
+    {
+        _connectionManager = connectionManager;
+    }
+
+    public override Task OnConnectedAsync()
+    {
+        var username = Context.GetHttpContext().Request.Query["username"];
+        _connectionManager.UserConnections[username] = Context.ConnectionId;
+        return base.OnConnectedAsync();
+    }
+
+    public override Task OnDisconnectedAsync(Exception exception)
+    {
+        var username = Context.GetHttpContext().Request.Query["username"];
+        _connectionManager.UserConnections.TryRemove(username, out _);
+        return base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task SendGameInvitation(string receiverUsername, string senderUsername)
+    {
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
+        {
+            await Clients.Client(connectionId).SendAsync("ReceiveGameInvitation", senderUsername);
+        }
+    }
+
+    public async Task AcceptGameInvitation(string receiverUsername, string senderUsername)
+    {
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
+        {
+            await Clients.Client(connectionId).SendAsync("AcceptGameInvitation", senderUsername);
+        }
+    }
+
+    public async Task DeclineGameInvitation(string receiverUsername, string senderUsername)
+    {
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
+        {
+            await Clients.Client(connectionId).SendAsync("DeclineGameInvitation", senderUsername);
+        }
+    }
+}

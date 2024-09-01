@@ -19,9 +19,9 @@ namespace OverflowBackend.Controllers
         [HttpPost]
         [AuthorizationFilter]
         [Route("api/addtoqueue")]
-        public IActionResult AddToQueue()
+        public IActionResult AddToQueue([FromBody] AddToQueueRequest request)
         {
-            var result = _matchMakingService.AddOrMatchPlayer((string)HttpContext.Items["username"]);
+            var result = _matchMakingService.AddOrMatchPlayer((string)HttpContext.Items["username"], request.Prematch, request.WithUsername);
             return Ok(result);
         }
 

@@ -8,5 +8,6 @@ namespace OverflowBackend.Services
         public OverflowDbContext(DbContextOptions<OverflowDbContext> options) : base(options)
         { }
             public DbSet<DBUser> Users { get; set; }
+            public DbSet<DBFriend> Friends { get; set; }
     }
 }

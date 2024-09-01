@@ -6,7 +6,7 @@ namespace OverflowBackend.Services.Interface
 {
     public interface IMatchMakingService
     {
-        public Maybe<string> AddOrMatchPlayer(string username);
+        public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername);
 
         public Maybe<Match> FindMyMatch(string username);
 
