@@ -56,6 +56,7 @@ builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
+builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
 builder.Services.AddSignalR();
 
 
@@ -110,25 +111,29 @@ app.Run();
 public class GameHub : Hub
 {
     // A dictionary to store connections by user ID
-    private static readonly ConcurrentDictionary<string, string> _userConnections = new ConcurrentDictionary<string, string>();
+    IConnectionManager _connectionManager;
+    public GameHub(IConnectionManager connectionManager)
+    {
+        _connectionManager = connectionManager;
+    }
 
     public override Task OnConnectedAsync()
     {
         var username = Context.GetHttpContext().Request.Query["username"];
-        _userConnections[username] = Context.ConnectionId;
+        _connectionManager.UserConnections[username] = Context.ConnectionId;
         return base.OnConnectedAsync();
     }
 
     public override Task OnDisconnectedAsync(Exception exception)
     {
         var username = Context.GetHttpContext().Request.Query["username"];
-        _userConnections.TryRemove(username, out _);
+        _connectionManager.UserConnections.TryRemove(username, out _);
         return base.OnDisconnectedAsync(exception);
     }
 
     public async Task SendGameInvitation(string receiverUsername, string senderUsername)
     {
-        if (_userConnections.TryGetValue(receiverUsername, out var connectionId))
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
         {
             await Clients.Client(connectionId).SendAsync("ReceiveGameInvitation", senderUsername);
         }
@@ -136,7 +141,7 @@ public class GameHub : Hub
 
     public async Task AcceptGameInvitation(string receiverUsername, string senderUsername)
     {
-        if (_userConnections.TryGetValue(receiverUsername, out var connectionId))
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
         {
             await Clients.Client(connectionId).SendAsync("AcceptGameInvitation", senderUsername);
         }
@@ -144,7 +149,7 @@ public class GameHub : Hub
 
     public async Task DeclineGameInvitation(string receiverUsername, string senderUsername)
     {
-        if (_userConnections.TryGetValue(receiverUsername, out var connectionId))
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
         {
             await Clients.Client(connectionId).SendAsync("DeclineGameInvitation", senderUsername);
         }

@@ -1,20 +1,26 @@
 ﻿using Google;
+using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Infrastructure;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OverflowBackend.Models.DB;
 using OverflowBackend.Models.Response;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services.Interface;
+using IConnectionManager = OverflowBackend.Services.Interface.IConnectionManager;
 
 namespace OverflowBackend.Services.Implementantion
 {
     public class FriendService : IFriendService
     {
         private readonly OverflowDbContext _dbContext;
+        IConnectionManager _connectionManager;
 
-        public FriendService(OverflowDbContext dbContext)
+        public FriendService(OverflowDbContext dbContext, IConnectionManager connectionManager)
         {
             _dbContext = dbContext;
+            _connectionManager = connectionManager;
         }
 
         public async Task<Maybe<string>> SendFriendRequest(string username, string friendUsername)
@@ -191,8 +197,9 @@ namespace OverflowBackend.Services.Implementantion
                         {
                             UserID = user.UserId,
                             Username = user.Username,
-                            Score = user.Rank
-                        });
+                            Score = user.Rank,
+                            IsOnline = _connectionManager.UserConnections.ContainsKey(user.Username)
+                        }); ;
                     }
                 }
             }
@@ -208,7 +215,8 @@ namespace OverflowBackend.Services.Implementantion
                         {
                             UserID = user.UserId,
                             Username = user.Username,
-                            Score = user.Rank
+                            Score = user.Rank,
+                            IsOnline = _connectionManager.UserConnections.ContainsKey(user.Username)
                         });
                     }
                 }
