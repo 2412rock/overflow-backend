@@ -62,6 +62,15 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpPost]
+        [AuthorizationFilter]
+        [Route("api/unfriend")]
+        public async Task<IActionResult> Unfriend([FromBody] FriendRequest request)
+        {
+            var result = await _friendService.Unfriend((string)HttpContext.Items["username"], request.FriendUsername);
+            return Ok(result);
+        }
+
         [HttpGet]
         [AuthorizationFilter]
         [Route("api/getFriendRequests")]

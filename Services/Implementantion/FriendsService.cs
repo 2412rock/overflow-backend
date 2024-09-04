@@ -88,6 +88,30 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<string>> Unfriend(string myUsername, string friendUsername) 
+        {
+            var maybe = new Maybe<string>();
+            var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == myUsername);
+            var friendUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == friendUsername);
+            if (myUser == null || friendUser == null)
+            {
+                maybe.SetException("Could not find username");
+                return maybe;
+            }
+            var friend = await _dbContext.Friends.FirstOrDefaultAsync(e => (e.UserId == myUser.UserId && e.FriendUserId == friendUser.UserId) || (e.UserId == friendUser.UserId && e.FriendUserId == myUser.UserId));
+            if(friend != null)
+            {
+                _dbContext.Remove(friend);
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Unfriended user");
+            }
+            else
+            {
+                maybe.SetException("Friend relation not found");
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<string>> DeclineFriendRequest(string myUsername, string friendUsername)
         {
             var maybe = new Maybe<string>();
