@@ -17,6 +17,13 @@ namespace OverflowBackend.Services.Implementantion
             thread.Start();
         }
 
+        public bool IsInQueue(string username)
+        {
+            lock (locker)
+            {
+                return queue.Any(e => e.Player1 == username || e.Player2 == username);
+            }
+        }
 
         public Maybe<int> GetQueueSize()
         {

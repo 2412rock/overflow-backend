@@ -14,5 +14,7 @@ namespace OverflowBackend.Services.Interface
 
         public Maybe<int> GetQueueSize();
 
+        public bool IsInQueue(string username);
+
     }
 }

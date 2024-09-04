@@ -1,4 +1,6 @@
-﻿namespace OverflowBackend.Models.Response
+﻿using OverflowBackend.Enums;
+
+namespace OverflowBackend.Models.Response
 {
     public class Friend
     {
@@ -8,6 +10,6 @@
 
         public int Score {get; set; }
 
-        public bool IsOnline { get; set; }
+        public FriendOnlineStatus Status { get; set; }
     }
 }

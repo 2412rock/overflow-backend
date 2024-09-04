@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using OverflowBackend.Enums;
 
 namespace OverflowBackend.Models.DB
 {

@@ -154,4 +154,12 @@ public class GameHub : Hub
             await Clients.Client(connectionId).SendAsync("DeclineGameInvitation", senderUsername);
         }
     }
+
+    public async Task CancelGameInvitation(string receiverUsername, string senderUsername)
+    {
+        if (_connectionManager.UserConnections.TryGetValue(receiverUsername, out var connectionId))
+        {
+            await Clients.Client(connectionId).SendAsync("CancelGameInvitation", senderUsername);
+        }
+    }
 }

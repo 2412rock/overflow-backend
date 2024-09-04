@@ -1,4 +1,4 @@
-﻿namespace OverflowBackend.Models.DB
+﻿namespace OverflowBackend.Enums
 {
     public enum FriendRequestStatus
     {

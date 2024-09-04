@@ -4,6 +4,7 @@ using Microsoft.AspNet.SignalR.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OverflowBackend.Enums;
 using OverflowBackend.Models.DB;
 using OverflowBackend.Models.Response;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
@@ -15,12 +16,14 @@ namespace OverflowBackend.Services.Implementantion
     public class FriendService : IFriendService
     {
         private readonly OverflowDbContext _dbContext;
-        IConnectionManager _connectionManager;
+        private readonly IConnectionManager _connectionManager;
+        private readonly IMatchMakingService _matchMakingService;
 
-        public FriendService(OverflowDbContext dbContext, IConnectionManager connectionManager)
+        public FriendService(OverflowDbContext dbContext, IConnectionManager connectionManager, IMatchMakingService matchMakingService)
         {
             _dbContext = dbContext;
             _connectionManager = connectionManager;
+            _matchMakingService = matchMakingService;
         }
 
         public async Task<Maybe<string>> SendFriendRequest(string username, string friendUsername)
@@ -169,6 +172,23 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        private FriendOnlineStatus GetStatus(string username)
+        {
+            var isOnline = _connectionManager.UserConnections.ContainsKey(username);
+            if (!isOnline)
+            {
+                return FriendOnlineStatus.Offline;
+            }
+            else
+            {
+                if(WebSocketHandler.Games.Any(e => e.Player1 == username || e.Player2 == username) || _matchMakingService.IsInQueue(username))
+                {
+                    return FriendOnlineStatus.InGame;
+                }
+            }
+            return FriendOnlineStatus.Online;
+        }
+
         public async Task<Maybe<List<Friend>>> GetFriends(string username)
         {
             var maybe = new Maybe<List<Friend>>();
@@ -183,8 +203,8 @@ namespace OverflowBackend.Services.Implementantion
 
             var friends = new List<Friend>();
 
-            var friendsDB1 = await _dbContext.Friends.Where(e => e.UserId == myUser.UserId).ToListAsync();
-            var friendsDB2 = await _dbContext.Friends.Where(e => e.FriendUserId == myUser.UserId).ToListAsync();
+            var friendsDB1 = await _dbContext.Friends.Where(e => e.UserId == myUser.UserId && e.Status == FriendRequestStatus.Accepted).ToListAsync();
+            var friendsDB2 = await _dbContext.Friends.Where(e => e.FriendUserId == myUser.UserId && e.Status == FriendRequestStatus.Accepted).ToListAsync();
 
             foreach (var friendDB in friendsDB1)
             {
@@ -198,8 +218,8 @@ namespace OverflowBackend.Services.Implementantion
                             UserID = user.UserId,
                             Username = user.Username,
                             Score = user.Rank,
-                            IsOnline = _connectionManager.UserConnections.ContainsKey(user.Username)
-                        }); ;
+                            Status = GetStatus(user.Username)
+                    }); ;
                     }
                 }
             }
@@ -216,7 +236,7 @@ namespace OverflowBackend.Services.Implementantion
                             UserID = user.UserId,
                             Username = user.Username,
                             Score = user.Rank,
-                            IsOnline = _connectionManager.UserConnections.ContainsKey(user.Username)
+                            Status = GetStatus(user.Username)
                         });
                     }
                 }

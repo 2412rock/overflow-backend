@@ -7,7 +7,7 @@ namespace OverflowBackend.Services
 {
     public static class WebSocketHandler
     {
-        private static List<Game> games = new List<Game>();
+        public static List<Game> Games = new List<Game>();
         static readonly object locker = new object();
         private static IScoreService _scoreService;
         private const string FIRST_MOVE_MSG = "start first move:";
@@ -53,7 +53,7 @@ namespace OverflowBackend.Services
                     game.GameOver = true;
                     await UpdatePlayerScore(1, game, false);
                     await UpdatePlayerScore(2, game, true);
-                    games.Remove(game);
+                    Games.Remove(game);
                 }).Wait();
             }
         }
@@ -81,7 +81,7 @@ namespace OverflowBackend.Services
                     game.UpdatedPlayer1Score = true;
                     game.UpdatedPlayer2Score = true;
 
-                    games.Remove(game);
+                    Games.Remove(game);
                 }).Wait();
             }
         }
@@ -108,7 +108,7 @@ namespace OverflowBackend.Services
                     game.GameOver = true;
                     game.UpdatedPlayer1Score = true;
                     game.UpdatedPlayer2Score = true;
-                    games.Remove(game);
+                    Games.Remove(game);
                 }).Wait();
             }
         }
@@ -135,7 +135,7 @@ namespace OverflowBackend.Services
                     game.GameOver = true;
                     await UpdatePlayerScore(1, game, true);
                     await UpdatePlayerScore(2, game, false);
-                    games.Remove(game);
+                    Games.Remove(game);
                 }).Wait();
             }
         }
@@ -164,7 +164,7 @@ namespace OverflowBackend.Services
 
         private static Game FindOrCreateGame(string gameId, string players, string playerName, WebSocket webSocket, out bool isPlayer1)
         {
-            var game = games.FirstOrDefault(g => g.GameId == gameId && (g.Player1 != null || g.Player2 != null));
+            var game = Games.FirstOrDefault(g => g.GameId == gameId && (g.Player1 != null || g.Player2 != null));
             if (game != null)
             {
                 return AssignPlayerToGame(game, players, playerName, webSocket, out isPlayer1);
@@ -224,7 +224,7 @@ namespace OverflowBackend.Services
                 SetPlayerScore(newGame, playerName, isPlayer1);
             }
 
-            games.Add(newGame);
+            Games.Add(newGame);
             return newGame;
         }
 
@@ -529,7 +529,7 @@ namespace OverflowBackend.Services
         {
             try
             {
-                games.Remove(game);
+                Games.Remove(game);
             }
             catch { }
         }
