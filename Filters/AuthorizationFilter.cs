@@ -2,14 +2,36 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using OverflowBackend.Helpers;
+using OverflowBackend.Services.Interface;
+using OverflowBackend.Services.Implementantion;
+using OverflowBackend.Services;
 
 namespace OverflowBackend.Filters
 {
     public class AuthorizationFilter : Attribute, IAuthorizationFilter
     {
         public string? Role { get; set; }
-        public void OnAuthorization(AuthorizationFilterContext context)
+
+        private bool GameVersionValid(AuthorizationFilterContext context)
         {
+            StringValues versionHeaderValues;
+            if (context.HttpContext.Request.Headers.TryGetValue("GameVersion", out versionHeaderValues))
+            {
+                string version = versionHeaderValues.FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(version)){
+                    return VersionService.IsVersionValid(version, GameVersion.Value);
+                }
+            }
+            return false;
+        }
+        public async void OnAuthorization(AuthorizationFilterContext context)
+        {
+            if (!GameVersionValid(context))
+            {
+                context.Result = new StatusCodeResult(405);
+                return;
+            }
+
             StringValues authorizationHeaderValues;
             if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
             {

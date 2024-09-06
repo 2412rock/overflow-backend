@@ -57,6 +57,8 @@ builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
 builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
+
+builder.Services.AddTransient<IVersionService, VersionService>();
 builder.Services.AddSignalR();
 
 
@@ -67,7 +69,18 @@ string hostIp = env == "Development" ? "192.168.1.134" : "192.168.1.159";
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
     options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+builder.Services.AddScoped<StartupService>();
 var app = builder.Build();
+
+app.Lifetime.ApplicationStarted.Register(async () =>
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var startupService = scope.ServiceProvider.GetRequiredService<StartupService>();
+        startupService.Initialize();
+    }
+});
+
 
 app.UseCors("AllowAnyOrigin");
 // Configure the HTTP request pipeline.

@@ -12,10 +12,12 @@ namespace OverflowBackend.Controllers
     {
         private readonly IMatchMakingService _matchMakingService;
         private readonly IConnectionManager _connectionManager;
-        public GameInviteController(IMatchMakingService matchMakingService, IConnectionManager connectionManager)
+        private readonly IVersionService _versionService;
+        public GameInviteController(IMatchMakingService matchMakingService, IConnectionManager connectionManager, IVersionService versionService)
         {
             _matchMakingService = matchMakingService;
             _connectionManager = connectionManager;
+            _versionService = versionService;
         }
 
         [HttpGet]
