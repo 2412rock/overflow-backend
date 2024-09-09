@@ -18,12 +18,16 @@ namespace OverflowBackend.Services
         public Timer Player1Timer { get; set; }
         public Timer Player2Timer { get; set; }
 
+        public Timer PlayerConnectTimer { get; set; }
+
         public Timer Player1TimerFirstMove { get; set; }
         public Timer Player2TimerFirstMove { get; set; }
         public event EventHandler Player1TimeoutEvent;
         public event EventHandler Player2TimeoutEvent;
         public event EventHandler Player1TimeoutEventFirstMove;
         public event EventHandler Player2TimeoutEventFirstMove;
+        public event EventHandler PlayerConnectTimeoutEvent;
+
         public DateTime Player1TimerStart { get; set; }
         public DateTime Player2TimerStart { get; set; }
         public DateTime Player1TimerStartFirstMove { get; set; }
@@ -40,6 +44,11 @@ namespace OverflowBackend.Services
 
         public Game()
         {
+            PlayerConnectTimer = new Timer(12000); // 15 seconds
+            PlayerConnectTimer.Elapsed += OnPlayerConnectTimeout;
+            PlayerConnectTimer.AutoReset = false;
+            PlayerConnectTimer.Start();
+
             Player1Timer = new Timer(120000); // 120 seconds in milliseconds
             Player1Timer.Elapsed += OnPlayer1Timeout;
             Player1Timer.AutoReset = false;
@@ -58,6 +67,11 @@ namespace OverflowBackend.Services
 
             Player1Connected = false;
             Player2Connected = false;
+        }
+
+        private void OnPlayerConnectTimeout(object sender, ElapsedEventArgs e)
+        {
+            PlayerConnectTimeoutEvent?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnPlayer1Timeout(object sender, ElapsedEventArgs e)

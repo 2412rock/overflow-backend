@@ -15,6 +15,7 @@ namespace OverflowBackend.Services
         private const string PLAYER_2_RAN_OUT_TIME = "Player 2 ran out of time";
         private const string PLAYER_1_NO_FIRST_MOVE = "Player 1 did not make first move";
         private const string PLAYER_2_NO_FIRST_MOVE = "Player 2 did not make first move";
+        private const string PLAYER_CONNECT_TIMEOUT = "Player failed to connect to game";
         private const string YOU_WON = "You won";
         private const string YOU_LOST = "You lost";
         private const string OPPONENT_CONNECT = "opponent";
@@ -37,16 +38,53 @@ namespace OverflowBackend.Services
             {
                 logger.LogError($"Exception caught in Websocket handler {e.Message}");
             }
-            
         }
 
-        private static void OnPlayer1Timeout(object sender, EventArgs e)
+        private static void OnPlayerConnectTimeout(object sender, EventArgs e)
         {
             try
             {
                 if (sender is Game game)
                 {
                     byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_RAN_OUT_TIME);
+                    if(!game.Player1Connected || !game.Player2Connected)
+                    {
+                        Task.Run(async () =>
+                        {
+                            if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                            {
+                                await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                            if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                            {
+                                await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                            game.Player1TimerFirstMove.Close();
+                            game.Player2TimerFirstMove.Close();
+                            game.UpdatedPlayer1Score = true;
+                            game.UpdatedPlayer2Score = true;
+                            game.Player1Timer.Close();
+                            game.Player2Timer.Close();
+                            game.GameOver = true;
+                            Games.Remove(game);
+                        }).Wait();
+                    }
+                    
+                }
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("Exception at player 1 timeout", exception.Message);
+            }
+        }
+        private static void OnPlayer1Timeout(object sender, EventArgs e)
+        {
+            try
+            {
+                if (sender is Game game)
+                {
+                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_CONNECT_TIMEOUT);
+
                     Task.Run(async () =>
                     {
                         if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
@@ -243,6 +281,7 @@ namespace OverflowBackend.Services
                 BoardLogic = new BoardLogic()
             };
 
+            newGame.PlayerConnectTimeoutEvent += OnPlayerConnectTimeout;
             newGame.Player1TimeoutEvent += OnPlayer1Timeout;
             newGame.Player2TimeoutEvent += OnPlayer2Timeout;
             newGame.Player1TimeoutEventFirstMove += OnPlayer1TimeoutFirstMove;
