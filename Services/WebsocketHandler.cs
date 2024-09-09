@@ -463,6 +463,8 @@ namespace OverflowBackend.Services
                         {
                             if(game.BoardLogic.playerTwoAvailableMoves.Count == 0 && receivedDataString != OPPONENT_CONNECT)
                             {
+                                await game.Player2Socket.SendAsync(new ArraySegment<byte>(receivedMessageBuffer, 0, websocketReceivedResult.Count), WebSocketMessageType.Text, websocketReceivedResult.EndOfMessage, System.Threading.CancellationToken.None);
+
                                 await HandleGameOver(game, player1Won: true);
                             }
                             else
@@ -567,6 +569,7 @@ namespace OverflowBackend.Services
                         {
                             if (game.BoardLogic.playerOneAvailableMoves.Count == 0 && receivedDataString != OPPONENT_CONNECT)
                             {
+                                await game.Player1Socket.SendAsync(new ArraySegment<byte>(receivedMessageBuffer, 0, websocketReceivedResult.Count), WebSocketMessageType.Text, websocketReceivedResult.EndOfMessage, System.Threading.CancellationToken.None);
                                 await HandleGameOver(game, false);
                             }
                             else
