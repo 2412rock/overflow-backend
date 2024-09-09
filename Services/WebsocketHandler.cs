@@ -46,7 +46,7 @@ namespace OverflowBackend.Services
             {
                 if (sender is Game game)
                 {
-                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_RAN_OUT_TIME);
+                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_CONNECT_TIMEOUT);
                     if(!game.Player1Connected || !game.Player2Connected)
                     {
                         Task.Run(async () =>
@@ -83,7 +83,7 @@ namespace OverflowBackend.Services
             {
                 if (sender is Game game)
                 {
-                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_CONNECT_TIMEOUT);
+                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_RAN_OUT_TIME);
 
                     Task.Run(async () =>
                     {
