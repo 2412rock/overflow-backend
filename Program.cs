@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using OverflowBackend.Middleware;
 using OverflowBackend.Services;
 using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
@@ -70,7 +71,11 @@ Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
     options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 builder.Services.AddScoped<StartupService>();
+builder.Logging.ClearProviders();
+builder.Logging.AddProvider(new LoggerProvider());
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
@@ -109,8 +114,9 @@ app.Use(async (context, next) =>
         using (var scope = app.Services.CreateScope())
         {
             var scoreService = scope.ServiceProvider.GetRequiredService<IScoreService>();
-            
-            await WebSocketHandler.HandleWebSocketRequest(webSocket, context, scoreService);
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            await WebSocketHandler.HandleWebSocketRequest(webSocket, context, scoreService, logger);
         }
     }
     else
