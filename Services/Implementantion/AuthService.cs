@@ -205,6 +205,28 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<bool>> DeleteAccount(string username)
+        {
+            var maybe = new Maybe<bool>();
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            if(user != null)
+            {
+                _dbContext.Users.Remove(user);
+                var friends = await _dbContext.Friends.Where(e => e.UserId == user.UserId || e.FriendUserId == user.UserId).ToListAsync();
+                foreach(var friend in friends)
+                {
+                    _dbContext.Friends.Remove(friend);
+                }
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess(true);
+            }
+            else
+            {
+                maybe.SetException("User not found");
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<bool>> ResetPassword(string username, string oldPassword, string newPassword)
         {
             var maybe = new Maybe<bool>();

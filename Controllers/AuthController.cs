@@ -74,5 +74,14 @@ namespace OverflowBackend.Controllers
             var result = await _authService.ResetPassword((string)HttpContext.Items["username"], request.OldPassword, request.NewPassword);
             return Ok(result);
         }
+
+        [HttpDelete]
+        [AuthorizationFilter]
+        [Route("api/deleteAccount")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var result = await _authService.DeleteAccount((string)HttpContext.Items["username"]);
+            return Ok(result);
+        }
     }
 }
