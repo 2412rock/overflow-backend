@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OverflowBackend.Filters;
 using OverflowBackend.Models.Requests;
 using OverflowBackend.Services.Interface;
 
@@ -53,6 +54,24 @@ namespace OverflowBackend.Controllers
         public async Task<IActionResult> LoginGoogle(LoginGoogleRequest request)
         {
             var result = await _authService.LoginGoogle(request.Email, request.Username, request.IdToken);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [AuthorizationFilter]
+        [Route("api/canResetPassword")]
+        public async Task<IActionResult> CanResetPassword()
+        {
+            var result = await _authService.CanResetPasswordResult((string)HttpContext.Items["username"]);
+            return Ok(result);
+        }
+
+        [HttpPut]
+        [AuthorizationFilter]
+        [Route("api/resetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPassword((string)HttpContext.Items["username"], request.OldPassword, request.NewPassword);
             return Ok(result);
         }
     }

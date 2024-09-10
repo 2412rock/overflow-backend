@@ -175,6 +175,70 @@ namespace OverflowBackend.Services.Implementantion
             return result;
         }
 
+        private async Task<Tuple<bool, DBUser>> CanResetPassword(string username)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            if(user != null)
+            {
+                if (String.IsNullOrEmpty(user.Password))
+                {
+                    // user is registered with google
+                    return new Tuple<bool, DBUser>(false, user);
+                }
+                return new Tuple<bool, DBUser>(true, user);
+            }
+            throw new Exception("User does not exist");
+        }
+
+        public async Task<Maybe<bool>> CanResetPasswordResult(string username)
+        {
+            var maybe = new Maybe<bool>();
+            try
+            {
+                var result = await CanResetPassword(username);
+                maybe.SetSuccess(result.Item1);
+            }
+            catch(Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+            return maybe;
+        }
+
+        public async Task<Maybe<bool>> ResetPassword(string username, string oldPassword, string newPassword)
+        {
+            var maybe = new Maybe<bool>();
+
+            try
+            {
+                var canReset = await CanResetPassword(username);
+                if (canReset.Item1)
+                {
+                    var hashedPassword = canReset.Item2.Password;
+                    if (!_passwordHashService.VerifyPassword(oldPassword, hashedPassword))
+                    {
+                        maybe.SetException("Invalid old password");
+                    }
+                    else if (oldPassword != newPassword)
+                    {
+                        canReset.Item2.Password = _passwordHashService.HashPassword(newPassword);
+                        _dbContext.Update(canReset.Item2);
+                        await _dbContext.SaveChangesAsync();
+                        maybe.SetSuccess(true);
+                    }
+                    else
+                    {
+                        maybe.SetException("New password cant be the same as old one");
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<Tokens>> LoginGoogle(string email, string? username, string idToken)
         {
             var response = new Maybe<Tokens>();
