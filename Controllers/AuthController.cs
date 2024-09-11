@@ -83,5 +83,21 @@ namespace OverflowBackend.Controllers
             var result = await _authService.DeleteAccount((string)HttpContext.Items["username"]);
             return Ok(result);
         }
+
+        [HttpPost]
+        [Route("api/sendVerificationCode")]
+        public async Task<IActionResult> LoginGoogle(SendVerificationCodeRequest request)
+        {
+            var result = await _authService.SendVerificationCode( request.Username);
+            return Ok(result);
+        }
+
+        [HttpPut]
+        [Route("api/verifyCodeAndChangePassword")]
+        public async Task<IActionResult> VerifyCodeAndChangePassword(VerifyCodeAndChangePasswordRequest request)
+        {
+            var result = await _authService.VerifyCodeAndChangePassword(request.VerificationCode, request.Username, request.NewPassword);
+            return Ok(result);
+        }
     }
 }

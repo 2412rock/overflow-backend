@@ -55,6 +55,7 @@ builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IFriendService, FriendService>();
+builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
 builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();

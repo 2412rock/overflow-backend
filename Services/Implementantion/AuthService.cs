@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SqlServer.Server;
+using Newtonsoft.Json.Linq;
 using OverflowBackend.Helpers;
 using OverflowBackend.Models.DB;
 using OverflowBackend.Models.Response;
@@ -15,11 +16,13 @@ namespace OverflowBackend.Services.Implementantion
     {
         private readonly OverflowDbContext _dbContext;
         private readonly IPasswordHashService _passwordHashService;
+        private readonly IMailService _mailService;
 
-        public AuthService(OverflowDbContext dbContext, IPasswordHashService passwordHashService)
+        public AuthService(OverflowDbContext dbContext, IPasswordHashService passwordHashService, IMailService mailService)
         {
             _dbContext = dbContext;
             _passwordHashService = passwordHashService;
+            _mailService = mailService;
         }
 
         private bool IsValidEmail(string input)
@@ -103,7 +106,7 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
-        public async Task<Maybe<bool>> SignUp(string username, string password, string? email) 
+        public async Task<Maybe<bool>> SignUp(string username, string password, string email) 
         {
             var maybe = new Maybe<bool>();
             if(!IsValidUsername(username) || !IsValidPassword(password))
@@ -257,6 +260,82 @@ namespace OverflowBackend.Services.Implementantion
             catch(Exception e)
             {
                 maybe.SetException(e.Message);
+            }
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> SendVerificationCode(string username)
+        {
+            var maybe = new Maybe<string>();
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            if(user != null)
+            {
+                if (String.IsNullOrEmpty(user.Password))
+                {
+                    maybe.SetException("User is google user");
+                }
+                else
+                {
+                    var verificationCode = new Random().Next(1000, 9999).ToString();
+                    _mailService.SendMailToUser(verificationCode, user.Email);
+                    if (VerificationCodeCollection.Values.ContainsKey(username))
+                    {
+                        string value;
+                        VerificationCodeCollection.Values.Remove(username, out value);
+                    }
+                    if(VerificationCodeCollection.Values.TryAdd(username, verificationCode))
+                    {
+                        maybe.SetSuccess("Verification code sent");
+                    }
+                    else
+                    {
+                        maybe.SetException("Failed to generate code. Try again");
+                    }
+                }
+            }
+            else
+            {
+                maybe.SetException("No user found with that username");
+            }
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> VerifyCodeAndChangePassword(string verificationCode, string username, string newPassword)
+        {
+            var maybe = new Maybe<string>();
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+            if (user != null)
+            {
+                if (String.IsNullOrEmpty(user.Password))
+                {
+                    maybe.SetException("User is google user");
+                }
+                else
+                {
+                    string code;
+                    if(VerificationCodeCollection.Values.TryGetValue(username, out code))
+                    {
+                        if(code == verificationCode)
+                        {
+                            user.Password = _passwordHashService.HashPassword(newPassword);
+                            _dbContext.Users.Update(user);
+                            await _dbContext.SaveChangesAsync();
+                            maybe.SetSuccess("Password changed");
+                        }
+                        else
+                        {
+                            maybe.SetException("Verification code invalid");
+                        }
+                    }
+                    else
+                    {
+                        maybe.SetException("No verification code sent for this username");
+                    }
+                }
+            }
+            else
+            {
+                maybe.SetException("No user found with that email");
             }
             return maybe;
         }
