@@ -7,7 +7,7 @@ namespace OverflowBackend.Helpers
 {
     public static class TokenHelper
     {
-        public static string GenerateJwtToken(string username, bool isRefreshToken = false, bool isAdmin = false)
+        public static string GenerateJwtToken(string username, string sessionId, bool isRefreshToken = false, bool isAdmin = false)
         {
             var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
             byte[] bytes = Encoding.UTF8.GetBytes(secretKey);
@@ -19,14 +19,14 @@ namespace OverflowBackend.Helpers
             var claims = !isRefreshToken ? new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username), // User identifier from Google
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique JWT ID
+                new Claim(JwtRegisteredClaimNames.Jti, sessionId), // Unique JWT ID
                 new Claim(JwtRegisteredClaimNames.Iss, issuer), // Token issuer
                 new Claim(JwtRegisteredClaimNames.Aud, audience),
                 new Claim("Role", isAdmin ? "admin" : "user")// Token audience
             } : new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, sessionId),
             };
 
             var token = new JwtSecurityToken(
@@ -52,6 +52,25 @@ namespace OverflowBackend.Helpers
                 foreach (var claim in jsonToken.Claims)
                 {
                     if (claim.Type == JwtRegisteredClaimNames.Sub)
+                    {
+                        return claim.Value;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static string GetSessionIdFromToken(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+
+            if (jsonToken != null)
+            {
+                // Extract token claims
+                foreach (var claim in jsonToken.Claims)
+                {
+                    if (claim.Type == JwtRegisteredClaimNames.Jti)
                     {
                         return claim.Value;
                     }

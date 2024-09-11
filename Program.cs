@@ -76,8 +76,6 @@ builder.Logging.ClearProviders();
 builder.Logging.AddProvider(new LoggerProvider());
 var app = builder.Build();
 
-app.UseMiddleware<ExceptionMiddleware>();
-
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
     using (var scope = app.Services.CreateScope())
@@ -89,6 +87,8 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 
 
 app.UseCors("AllowAnyOrigin");
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<SessionValidationMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

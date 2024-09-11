@@ -72,6 +72,30 @@ namespace OverflowBackend.Services.Implementantion
             return isValid;
         }
 
+        private async Task<string> HandleSession(string username)
+        {
+            var existingSession = await _dbContext.UserSessions.FirstOrDefaultAsync(s => s.Username == username && s.IsActive);
+            if (existingSession != null)
+            {
+                existingSession.IsActive = false;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // Generate new session token
+            var sessionToken = Guid.NewGuid().ToString();
+            var userSession = new DBUserSession
+            {
+                Username = username,
+                SessionToken = sessionToken,
+                LastActiveTime = DateTime.UtcNow,
+                IsActive = true
+            };
+            _dbContext.UserSessions.Add(userSession);
+            await _dbContext.SaveChangesAsync();
+
+            return sessionToken;
+        }
+
         public async Task<Maybe<Tokens>> SignIn(string username, string password)
         {
             var maybe = new Maybe<Tokens>();
@@ -87,10 +111,12 @@ namespace OverflowBackend.Services.Implementantion
                 var hashedPassword = user.Password;
                 if(_passwordHashService.VerifyPassword(password, hashedPassword))
                 {
+                    var session = await HandleSession(username);
                     maybe.SetSuccess(new Tokens() 
                     {
-                         BearerToken =  TokenHelper.GenerateJwtToken(username, false), 
-                         RefreshToken = TokenHelper.GenerateJwtToken(username, isAdmin: false) 
+                         BearerToken =  TokenHelper.GenerateJwtToken(username, session, false), 
+                         RefreshToken = TokenHelper.GenerateJwtToken(username, session, isAdmin: false) ,
+                         Session = session
                     });
                 }
                 else
@@ -161,9 +187,10 @@ namespace OverflowBackend.Services.Implementantion
             if (!TokenHelper.IsTokenExpired(token) && username != null)
             {
                 var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+                var session = await HandleSession(username);
                 if (user != null)
                 {
-                    var refreshedToken = TokenHelper.GenerateJwtToken(username, isAdmin: false);
+                    var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isAdmin: false);
                     result.SetSuccess(refreshedToken);
                     return result;
                 }
@@ -370,10 +397,11 @@ namespace OverflowBackend.Services.Implementantion
                     response.SetException("could not find user");
                     return response;
                 }
+                var session = await HandleSession(user.Username);
                 response.SetSuccess(new Tokens() 
                 {
-                    BearerToken =  TokenHelper.GenerateJwtToken(user.Username, true), 
-                    RefreshToken =  TokenHelper.GenerateJwtToken(user.Username, isAdmin: false),
+                    BearerToken =  TokenHelper.GenerateJwtToken(user.Username, session, true), 
+                    RefreshToken =  TokenHelper.GenerateJwtToken(user.Username,session, isAdmin: false),
                     Username = user.Username
                 });
             }

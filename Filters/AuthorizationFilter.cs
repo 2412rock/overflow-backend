@@ -48,6 +48,7 @@ namespace OverflowBackend.Filters
                         }
                     }
                     var username = TokenHelper.GetUsernameFromToken(token);
+
                     if (TokenHelper.IsTokenExpired(token))
                     {
                         context.Result = new StatusCodeResult(403);
@@ -58,6 +59,7 @@ namespace OverflowBackend.Filters
                         context.HttpContext.Items["username"] = username;
                         return;
                     }
+
 
                 }
             }
