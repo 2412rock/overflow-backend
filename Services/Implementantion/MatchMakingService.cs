@@ -59,6 +59,17 @@ namespace OverflowBackend.Services.Implementantion
             
         }
 
+        private bool BotMatchedWithBot(string player1, string player2)
+        {
+            var usernames = new string[] { "random_bot", "Pixel", "Voyager", "Nebula", "Explorer", "Scribe" };
+
+            bool player1Matched = usernames.Contains(player1);
+            bool player2Matched = usernames.Contains(player2);
+
+            // Return true if both usernames are in the list of valid usernames
+            return player1Matched && player2Matched;
+        }
+
         private Maybe<string> RandomMatch(string username)
         {
             var maybe = new Maybe<string>();
@@ -78,7 +89,7 @@ namespace OverflowBackend.Services.Implementantion
             {
                 foreach (var match in queue)
                 {
-                    if (match.Player1 != null && match.Player2 == null /*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
+                    if (match.Player1 != null && match.Player2 == null && !BotMatchedWithBot(match.Player1, username)/*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
                     {
                         match.Player2 = username;
                         maybe.SetSuccess("Matched");
