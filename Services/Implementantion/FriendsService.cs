@@ -163,7 +163,7 @@ namespace OverflowBackend.Services.Implementantion
             if (!startsWith.IsNullOrEmpty())
             {
                 var myUser = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == myUsername);
-                var users = await _dbContext.Users.Where(user => user.Username.ToLower().StartsWith(startsWith)).ToListAsync();
+                var users = await _dbContext.Users.Where(user => user.Username.StartsWith(startsWith) || user.Username.ToLower().StartsWith(startsWith)).ToListAsync();
                 foreach(var user in users)
                 {
                     if(user.Username == myUsername)
