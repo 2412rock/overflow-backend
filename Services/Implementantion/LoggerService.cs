@@ -33,8 +33,8 @@
 
             lock (_lock)
             {
-                var logFilePath = $"C:/Users/{Environment.UserName}/OverflowLogs/{DateTime.Now:yyyy-MM-dd}.txt";
-                EnsureDirectoryExists($"C:/Users/{Environment.UserName}/OverflowLogs");
+                var logFilePath = $"/app/logs/{DateTime.Now:yyyy-MM-dd}.txt";
+               // EnsureDirectoryExists($"C:/Users/{Environment.UserName}/OverflowLogs");
 
                 if (!File.Exists(logFilePath))
                 {
