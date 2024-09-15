@@ -7,7 +7,7 @@ namespace OverflowBackend.Services
 {
     public static class WebSocketHandler
     {
-        public static List<Game> Games = new List<Game>();
+        public static ConcurrentList<Game> Games = new ConcurrentList<Game>();
         static readonly object locker = new object();
         private static IScoreService _scoreService;
         private const string FIRST_MOVE_MSG = "start first move:";
@@ -37,17 +37,20 @@ namespace OverflowBackend.Services
             catch(Exception e)
             {
                 logger.LogError($"Exception caught in Websocket handler {e.Message}");
+                var gameToRemove = Games.FirstOrDefault(e => e.GameId == gameId);
+                Games.Remove(gameToRemove);
             }
         }
 
         private static void OnPlayerConnectTimeout(object sender, EventArgs e)
         {
-            try
+            if (sender is Game game)
             {
-                if (sender is Game game)
+                try
                 {
+
                     byte[] msg = Encoding.UTF8.GetBytes(PLAYER_CONNECT_TIMEOUT);
-                    if(!game.Player1Connected || !game.Player2Connected)
+                    if (!game.Player1Connected || !game.Player2Connected)
                     {
                         Task.Run(async () =>
                         {
@@ -67,14 +70,16 @@ namespace OverflowBackend.Services
                             game.Player2Timer.Close();
                             game.GameOver = true;
                             Games.Remove(game);
+
                         }).Wait();
                     }
-                    
+
                 }
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError("Exception at player 1 timeout", exception.Message);
+
+                catch (Exception exception)
+                {
+                    _logger.LogError("Exception at player 1 timeout", exception.Message);
+                }
             }
         }
         private static void OnPlayer1Timeout(object sender, EventArgs e)
