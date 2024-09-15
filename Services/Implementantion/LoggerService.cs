@@ -34,13 +34,16 @@
             lock (_lock)
             {
                 var logFilePath = $"/app/logs/{DateTime.Now:yyyy-MM-dd}.txt";
-               // EnsureDirectoryExists($"C:/Users/{Environment.UserName}/OverflowLogs");
-
-                if (!File.Exists(logFilePath))
+                // EnsureDirectoryExists($"C:/Users/{Environment.UserName}/OverflowLogs");
+                try
                 {
-                    File.Create(logFilePath).Dispose(); // Dispose to release the file handle
+                    if (!File.Exists(logFilePath))
+                    {
+                        File.Create(logFilePath).Dispose(); // Dispose to release the file handle
+                    }
+                    File.AppendAllText(logFilePath, message + Environment.NewLine);
                 }
-                File.AppendAllText(logFilePath, message + Environment.NewLine);
+                catch { }
             }
         }
 
