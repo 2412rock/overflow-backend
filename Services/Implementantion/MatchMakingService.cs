@@ -78,7 +78,7 @@ namespace OverflowBackend.Services.Implementantion
                 var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
                 if (GameCollection.List == null)
                 {
-                    GameCollection.List = new List<string>();
+                    GameCollection.List = new ConcurrentList<string>();
                 }
                 GameCollection.List.Add(match.GameId);
                 queue.Add(match);
@@ -100,7 +100,7 @@ namespace OverflowBackend.Services.Implementantion
             var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
             if (GameCollection.List == null)
             {
-                GameCollection.List = new List<string>();
+                GameCollection.List = new ConcurrentList<string>();
             }
             GameCollection.List.Add(newMatch.GameId);
             queue.Add(newMatch);
@@ -120,7 +120,7 @@ namespace OverflowBackend.Services.Implementantion
                 var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), Player2 = withUsername };
                 if (GameCollection.List == null)
                 {
-                    GameCollection.List = new List<string>();
+                    GameCollection.List = new ConcurrentList<string>();
                 }
                 GameCollection.List.Add(match.GameId);
                 queue.Add(match);

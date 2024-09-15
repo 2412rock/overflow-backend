@@ -376,7 +376,7 @@ namespace OverflowBackend.Services
 
         private static bool IsValidGameRequest(string gameId)
         {
-            return GameCollection.List != null && GameCollection.List.Contains(gameId);
+            return GameCollection.List != null && GameCollection.List.Any( e=> e == gameId);
         }
 
         private static Game FindOrCreateGame(string gameId, string players, string playerName, WebSocket webSocket, out bool isPlayer1)

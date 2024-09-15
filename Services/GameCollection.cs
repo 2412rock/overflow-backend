@@ -2,6 +2,6 @@
 {
     public static class GameCollection
     {
-        public static List<string> List;
+        public static ConcurrentList<string> List = new ConcurrentList<string>();
     }
 }
