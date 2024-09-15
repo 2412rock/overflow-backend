@@ -4,7 +4,7 @@ using Timer = System.Timers.Timer;
 
 namespace OverflowBackend.Services
 {
-    public class Game
+    public class Game : IDisposable
     {
         public string GameId { get; set; }
         public string Player1 { get; set; }
@@ -92,6 +92,43 @@ namespace OverflowBackend.Services
         private void OnPlayer2TimeoutFirstMove(object sender, ElapsedEventArgs e)
         {
             Player2TimeoutEventFirstMove?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void Dispose()
+        {
+            Player1TimeoutEvent = null;
+            Player2TimeoutEvent = null;
+            Player1TimeoutEventFirstMove = null;
+            Player2TimeoutEventFirstMove = null;
+            PlayerConnectTimeoutEvent = null;
+            // Unsubscribe from events before disposing of timers
+            PlayerConnectTimer.Elapsed -= OnPlayerConnectTimeout;
+            Player1Timer.Elapsed -= OnPlayer1Timeout;
+            Player2Timer.Elapsed -= OnPlayer2Timeout;
+            Player1TimerFirstMove.Elapsed -= OnPlayer1TimeoutFirstMove;
+            Player2TimerFirstMove.Elapsed -= OnPlayer2TimeoutFirstMove;
+
+            // Dispose of timers
+            PlayerConnectTimer?.Dispose();
+            Player1Timer?.Dispose();
+            Player2Timer?.Dispose();
+            Player1TimerFirstMove?.Dispose();
+            Player2TimerFirstMove?.Dispose();
+
+            // Dispose of WebSockets if necessary
+            if (Player1Socket != null && Player1Socket.State == WebSocketState.Open)
+            {
+                Player1Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Game over", CancellationToken.None).Wait();
+                Player1Socket.Dispose();
+            }
+
+            if (Player2Socket != null && Player2Socket.State == WebSocketState.Open)
+            {
+                Player2Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Game over", CancellationToken.None).Wait();
+                Player2Socket.Dispose();
+            }
+
+            GC.SuppressFinalize(this);
         }
     }
 }
