@@ -719,7 +719,7 @@ namespace OverflowBackend.Services
 
             GameCollection.List.Remove(game.GameId);
 
-            TryDeleteGame(game);
+            Games.Remove(game);
 
             await HandleOpponentLeft(game, websocketReceivedResult, player1Won: false);
         }
@@ -733,23 +733,32 @@ namespace OverflowBackend.Services
                 await UpdatePlayerScore(2, game, !player1Won);
                 if (!player1Won)
                 {
-                    await game.Player2Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    try
+                    {
+                        await game.Player2Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    }
+                    catch(Exception exception)
+                    {
+                        _logger.LogError("Failed to send opponent left to player 2");
+                    }
                 }
                 else
                 {
-                    await game.Player1Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    try
+                    {
+                        await game.Player1Socket.SendAsync(new ArraySegment<byte>(msgBuffer), WebSocketMessageType.Text, result.EndOfMessage, System.Threading.CancellationToken.None);
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogError("Failed to send opponent left to player 1");
+                    }
                 }
             }
             catch { }
-        }
-
-        private static void TryDeleteGame(Game game)
-        {
-            try
+            finally
             {
                 Games.Remove(game);
             }
-            catch { }
         }
 
         private static async Task ListenOnSocketPlayer2(Game game)
@@ -824,7 +833,7 @@ namespace OverflowBackend.Services
 
             GameCollection.List.Remove(game.GameId);
 
-            TryDeleteGame(game);
+            Games.Remove(game);
 
             await HandleOpponentLeft(game, websocketReceivedResult, player1Won: true);
         }
