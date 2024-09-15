@@ -46,8 +46,6 @@ namespace OverflowBackend.Services
         {
             if (sender is Game game)
             {
-                try
-                {
 
                     byte[] msg = Encoding.UTF8.GetBytes(PLAYER_CONNECT_TIMEOUT);
                     if (!game.Player1Connected || !game.Player2Connected)
@@ -56,135 +54,112 @@ namespace OverflowBackend.Services
                         {
                             if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
                             {
-                                await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                                try
+                                {
+                                    await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                                }
+                                catch 
+                                {
+                                    _logger.LogError("Error sending PlayerConnectTimeout");
+                                }
+                                
                             }
                             if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
                             {
-                                await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                                try
+                                {
+                                    await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                                }
+                                catch 
+                                {
+                                    _logger.LogError("Error sending PlayerConnectTimeout");
+                                }
+                                
                             }
-                            game.Player1TimerFirstMove.Close();
-                            game.Player2TimerFirstMove.Close();
-                            game.UpdatedPlayer1Score = true;
-                            game.UpdatedPlayer2Score = true;
-                            game.Player1Timer.Close();
-                            game.Player2Timer.Close();
-                            game.GameOver = true;
-                            Games.Remove(game);
+
+                            lock (locker)
+                            {
+                                try
+                                {
+                                    game.Player1TimerFirstMove.Stop();
+                                    game.Player2TimerFirstMove.Stop();
+                                    game.UpdatedPlayer1Score = true;
+                                    game.UpdatedPlayer2Score = true;
+                                    game.Player1Timer.Stop();
+                                    game.Player2Timer.Stop();
+                                    game.GameOver = true;
+                                    game.Dispose();
+                                    Games.Remove(game);
+                                }
+                                catch 
+                                {
+                                    _logger.LogError("Error PlayerConnectTimeout finalizing game");
+                                }   
+                            }
 
                         }).Wait();
                     }
-
                 }
-
-                catch (Exception exception)
-                {
-                    _logger.LogError("Exception at player 1 timeout", exception.Message);
-                }
-            }
         }
         private static void OnPlayer1Timeout(object sender, EventArgs e)
         {
-            try
-            {
-                if (sender is Game game)
-                {
-                    byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_RAN_OUT_TIME);
-
-                    Task.Run(async () =>
-                    {
-                        if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
-                        {
-                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                        if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
-                        {
-                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                        game.Player1TimerFirstMove.Close();
-                        game.Player2TimerFirstMove.Close();
-                        game.Player1Timer.Close();
-                        game.Player2Timer.Close();
-                        game.GameOver = true;
-                        await UpdatePlayerScore(1, game, false);
-                        await UpdatePlayerScore(2, game, true);
-                        Games.Remove(game);
-                    }).Wait();
-                }
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError("Exception at player 1 timeout", exception.Message);
-            }
-        }
-
-        private static void OnPlayer1TimeoutFirstMove(object sender, EventArgs e)
-        {
             if (sender is Game game)
             {
-                byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_NO_FIRST_MOVE);
-                try
+                byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_RAN_OUT_TIME);
+
+                Task.Run(async () =>
                 {
-                    Task.Run(async () =>
+                    // Send message to Player1
+                    if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
                     {
-                        if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                        try
                         {
                             await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
                         }
-                        if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                        catch (Exception ex)
                         {
-                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            _logger.LogError($"Error sending timeout message to Player1: {ex.Message}");
                         }
-                        game.Player1TimerFirstMove.Close();
-                        game.Player2TimerFirstMove.Close();
-                        game.Player1Timer.Close();
-                        game.Player2Timer.Close();
-                        game.GameOver = true;
-                        game.UpdatedPlayer1Score = true;
-                        game.UpdatedPlayer2Score = true;
+                    }
 
-                        Games.Remove(game);
-                    }).Wait();
-                }
-                catch(Exception exception)
-                {
-                    _logger.LogError("Exception at first move timout player 1", exception.Message);
-                }
-                
-            }
-        }
-
-        private static void OnPlayer2TimeoutFirstMove(object sender, EventArgs e)
-        {
-            if (sender is Game game)
-            {
-                byte[] msg = Encoding.UTF8.GetBytes(PLAYER_2_NO_FIRST_MOVE);
-                try
-                {
-                    Task.Run(async () =>
+                    // Send message to Player2
+                    if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
                     {
-                        if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
-                        {
-                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                        if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                        try
                         {
                             await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
                         }
-                        game.Player1TimerFirstMove.Close();
-                        game.Player2TimerFirstMove.Close();
-                        game.Player1Timer.Close();
-                        game.Player2Timer.Close();
-                        game.GameOver = true;
-                        game.UpdatedPlayer1Score = true;
-                        game.UpdatedPlayer2Score = true;
-                        Games.Remove(game);
-                    }).Wait();
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError("Exception at first move timout player 2", exception.Message);
-                }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error sending timeout message to Player2: {ex.Message}");
+                        }
+                    }
 
+                    // Game finalization
+                    lock (game.LockeUpdateScores)
+                    {
+                        try
+                        {
+                            game.Player1TimerFirstMove.Stop();
+                            game.Player2TimerFirstMove.Stop();
+                            game.Player1Timer.Stop();
+                            game.Player2Timer.Stop();
+                            game.GameOver = true;
+
+                            Task.Run(async () => {
+                                await UpdatePlayerScore(1, game, false);
+                                await UpdatePlayerScore(2, game, true);
+                            });
+                            
+                            Games.Remove(game);
+                            game.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error finalizing game in Player1Timeout: {ex.Message}");
+                        }
+                    }
+                }).Wait();
             }
         }
 
@@ -195,33 +170,192 @@ namespace OverflowBackend.Services
                 if (sender is Game game)
                 {
                     byte[] msg = Encoding.UTF8.GetBytes(PLAYER_2_RAN_OUT_TIME);
+
                     Task.Run(async () =>
                     {
+                        // Send message to Player1
                         if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
                         {
-                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            try
+                            {
+                                await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error sending timeout message to Player1: {ex.Message}");
+                            }
                         }
+
+                        // Send message to Player2
                         if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
                         {
-                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            try
+                            {
+                                await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error sending timeout message to Player2: {ex.Message}");
+                            }
                         }
-                        game.Player1TimerFirstMove.Close();
-                        game.Player2TimerFirstMove.Close();
-                        game.Player1Timer.Close();
-                        game.Player2Timer.Close();
-                        game.GameOver = true;
-                        await UpdatePlayerScore(1, game, true);
-                        await UpdatePlayerScore(2, game, false);
-                        Games.Remove(game);
+
+                        // Finalize the game
+                        lock (game.LockeUpdateScores)
+                        {
+                            try
+                            {
+                                game.Player1TimerFirstMove.Stop();
+                                game.Player2TimerFirstMove.Stop();
+                                game.Player1Timer.Stop();
+                                game.Player2Timer.Stop();
+                                game.GameOver = true;
+
+                                Task.Run(async () => {
+                                    await UpdatePlayerScore(1, game, true);
+                                    await UpdatePlayerScore(2, game, false);
+                                });
+
+                                Games.Remove(game);
+                                game.Dispose();
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError($"Error finalizing game in Player2Timeout: {ex.Message}");
+                            }
+                        }
+
                     }).Wait();
                 }
             }
             catch (Exception exception)
             {
-                _logger.LogError("Exception at player 2 timeout", exception.Message);
+                _logger.LogError($"Exception at Player 2 timeout: {exception.Message}");
             }
-
         }
+
+
+        private static void OnPlayer1TimeoutFirstMove(object sender, EventArgs e)
+        {
+            if (sender is Game game)
+            {
+                byte[] msg = Encoding.UTF8.GetBytes(PLAYER_1_NO_FIRST_MOVE);
+
+                Task.Run(async () =>
+                {
+                    // Send message to Player1
+                    if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                    {
+                        try
+                        {
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error sending first move timeout to Player1: {ex.Message}");
+                        }
+                    }
+
+                    // Send message to Player2
+                    if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                    {
+                        try
+                        {
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error sending first move timeout to Player2: {ex.Message}");
+                        }
+                    }
+
+                    // Game finalization
+                    lock (game.LockeUpdateScores)
+                    {
+                        try
+                        {
+                            game.Player1TimerFirstMove.Stop();
+                            game.Player2TimerFirstMove.Stop();
+                            game.Player1Timer.Stop();
+                            game.Player2Timer.Stop();
+                            game.GameOver = true;
+                            game.UpdatedPlayer1Score = true;
+                            game.UpdatedPlayer2Score = true;
+
+                            Games.Remove(game);
+                            game.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error finalizing game in Player1TimeoutFirstMove: {ex.Message}");
+                        }
+                    }
+
+                }).Wait();
+            }
+        }
+
+
+        private static void OnPlayer2TimeoutFirstMove(object sender, EventArgs e)
+        {
+            if (sender is Game game)
+            {
+                byte[] msg = Encoding.UTF8.GetBytes(PLAYER_2_NO_FIRST_MOVE);
+
+                Task.Run(async () =>
+                {
+                    // Send message to Player1
+                    if (game.Player1Socket != null && game.Player1Socket.State == WebSocketState.Open)
+                    {
+                        try
+                        {
+                            await game.Player1Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error sending first move timeout to Player1: {ex.Message}");
+                        }
+                    }
+
+                    // Send message to Player2
+                    if (game.Player2Socket != null && game.Player2Socket.State == WebSocketState.Open)
+                    {
+                        try
+                        {
+                            await game.Player2Socket.SendAsync(new ArraySegment<byte>(msg), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error sending first move timeout to Player2: {ex.Message}");
+                        }
+                    }
+
+                    // Game finalization
+                    lock (game.LockeUpdateScores)
+                    {
+                        try
+                        {
+                            game.Player1TimerFirstMove.Stop();
+                            game.Player2TimerFirstMove.Stop();
+                            game.Player1Timer.Stop();
+                            game.Player2Timer.Stop();
+                            game.GameOver = true;
+                            game.UpdatedPlayer1Score = true;
+                            game.UpdatedPlayer2Score = true;
+
+                            Games.Remove(game);
+                            game.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Error finalizing game in Player2TimeoutFirstMove: {ex.Message}");
+                        }
+                    }
+
+                }).Wait();
+            }
+        }
+
+
 
         public static async Task HandleWebSocketRequest(WebSocket webSocket, string gameId, string players, string playerName)
         {
@@ -388,8 +522,8 @@ namespace OverflowBackend.Services
                 await game.Player1Socket.SendAsync(new ArraySegment<byte>(lostMsg), WebSocketMessageType.Text, true, CancellationToken.None);
             }
             
-            game.Player1Timer.Close();
-            game.Player2Timer.Close();
+            game.Player1Timer.Stop();
+            game.Player2Timer.Stop();
         }
 
         private static async Task HandleOpponentMessagePlayer1(Game game, byte[] receivedMessageBuffer, WebSocketReceiveResult result)
@@ -455,7 +589,6 @@ namespace OverflowBackend.Services
             {
                 // In case the first move timer is running for player 1, stop it
                 game.Player1TimerFirstMove.Stop();
-                game.Player1TimerFirstMove.Close();
                 // If the first move timer is running, it means player 2 has to make its first move too, so start that timer
                 game.Player2TimerFirstMove.Start();
                 game.Player2TimerStartFirstMove = DateTime.UtcNow;
@@ -487,7 +620,6 @@ namespace OverflowBackend.Services
             {
                 // In case the first move timer is running for player 2, stop it
                 game.Player2TimerFirstMove.Stop();
-                game.Player2TimerFirstMove.Close();
                 game.Player1Timer.Start();
                 game.Player1TimerStart = DateTime.UtcNow;
                 //Send player 2 move to player 1
@@ -582,8 +714,8 @@ namespace OverflowBackend.Services
             }
             await game.Player1Socket.CloseAsync(websocketReceivedResult.CloseStatus.Value, websocketReceivedResult.CloseStatusDescription, System.Threading.CancellationToken.None);
 
-            game.Player1Timer.Close();
-            game.Player2Timer.Close();
+            game.Player1Timer.Stop();
+            game.Player2Timer.Stop();
 
             GameCollection.List.Remove(game.GameId);
 
@@ -687,8 +819,8 @@ namespace OverflowBackend.Services
             }
             await game.Player2Socket.CloseAsync(websocketReceivedResult.CloseStatus.Value, websocketReceivedResult.CloseStatusDescription, System.Threading.CancellationToken.None);
             
-            game.Player1Timer.Close();
-            game.Player2Timer.Close();
+            game.Player1Timer.Stop();
+            game.Player2Timer.Stop();
 
             GameCollection.List.Remove(game.GameId);
 
