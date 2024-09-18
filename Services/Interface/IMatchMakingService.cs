@@ -8,7 +8,7 @@ namespace OverflowBackend.Services.Interface
     {
         public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername);
 
-        public Maybe<Match> FindMyMatch(string username);
+        public Maybe<Match> FindMyMatch(string username, OverflowDbContext overflowDbContext);
 
         public void RemoveMatch(string username);
 

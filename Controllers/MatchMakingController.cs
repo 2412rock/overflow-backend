@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OverflowBackend.Filters;
 using OverflowBackend.Models.Requests;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
+using OverflowBackend.Services;
 using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Controllers
@@ -11,9 +12,11 @@ namespace OverflowBackend.Controllers
     public class MatchMakingController : ControllerBase
     {
         private readonly IMatchMakingService _matchMakingService;
-        public MatchMakingController(IMatchMakingService matchMakingService)
+        private readonly OverflowDbContext _dbContext;
+        public MatchMakingController(IMatchMakingService matchMakingService, OverflowDbContext dbContext)
         {
             _matchMakingService = matchMakingService;
+            _dbContext = dbContext;
         }
 
         [HttpPost]
@@ -38,7 +41,7 @@ namespace OverflowBackend.Controllers
         [Route("api/getMyMatch")]
         public IActionResult GetMyMatch()
         {
-            var result = _matchMakingService.FindMyMatch((string)HttpContext.Items["username"]);
+            var result = _matchMakingService.FindMyMatch((string)HttpContext.Items["username"], _dbContext);
             return Ok(result);
         }
 

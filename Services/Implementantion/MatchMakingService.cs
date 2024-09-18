@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services.Interface;
 using System.Collections.Concurrent;
@@ -146,7 +147,7 @@ namespace OverflowBackend.Services.Implementantion
             }
         }
 
-        public Maybe<Match> FindMyMatch(string username)
+        public Maybe<Match> FindMyMatch(string username, OverflowDbContext dbContext)
         {
             var maybe = new Maybe<Match>();
 
@@ -164,6 +165,14 @@ namespace OverflowBackend.Services.Implementantion
                         if (match.Player2 == username)
                         {
                             match.HearBeatPlayer2 = DateTime.Now;
+                        }
+
+                        if(!String.IsNullOrEmpty(match.Player1) && !String.IsNullOrEmpty(match.Player2))
+                        {
+                            var player1 = dbContext.Users.First(e => e.Username == match.Player1);
+                            var player2 = dbContext.Users.First(e => e.Username == match.Player2);
+                            match.Player1Rank = player1.Rank;
+                            match.Player2Rank = player2.Rank;
                         }
                         
                         maybe.SetSuccess(match);
@@ -207,6 +216,8 @@ namespace OverflowBackend.Services.Implementantion
     {
         public string Player1 { get; set; }
         public string Player2 { get; set; }
+        public int Player1Rank { get; set; }
+        public int Player2Rank { get; set; }
         public List<double> Board { get; set; }
 
         public DateTime? HearBeatPlayer1 = null;
