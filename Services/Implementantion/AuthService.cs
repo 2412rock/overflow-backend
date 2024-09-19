@@ -112,6 +112,7 @@ namespace OverflowBackend.Services.Implementantion
                 if(_passwordHashService.VerifyPassword(password, hashedPassword))
                 {
                     var session = await HandleSession(username);
+                    AppStatsLogger.LogSignIn(username, null);
                     maybe.SetSuccess(new Tokens() 
                     {
                          BearerToken =  TokenHelper.GenerateJwtToken(username, session, false), 
@@ -158,6 +159,7 @@ namespace OverflowBackend.Services.Implementantion
                 };
                 await _dbContext.Users.AddAsync(user);
                 await _dbContext.SaveChangesAsync();
+                AppStatsLogger.LogSignUp(username, null);
                 maybe.SetSuccess(true);
             }
             else
@@ -398,6 +400,7 @@ namespace OverflowBackend.Services.Implementantion
                     return response;
                 }
                 var session = await HandleSession(user.Username);
+                AppStatsLogger.LogSignIn(user.Username, null);
                 response.SetSuccess(new Tokens() 
                 {
                     BearerToken =  TokenHelper.GenerateJwtToken(user.Username, session, true), 
