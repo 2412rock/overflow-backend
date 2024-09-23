@@ -57,11 +57,11 @@ namespace OverflowBackend.Services
             Player2Timer.Elapsed += OnPlayer2Timeout;
             Player2Timer.AutoReset = false;
 
-            Player1TimerFirstMove = new Timer(10000); // 120000 120 seconds in milliseconds
+            Player1TimerFirstMove = new Timer(15000); // 120000 120 seconds in milliseconds
             Player1TimerFirstMove.Elapsed += OnPlayer1TimeoutFirstMove;
             Player1TimerFirstMove.AutoReset = false;
 
-            Player2TimerFirstMove = new Timer(10000); // 10 seconds
+            Player2TimerFirstMove = new Timer(15000); // 10 seconds
             Player2TimerFirstMove.Elapsed += OnPlayer2TimeoutFirstMove;
             Player2TimerFirstMove.AutoReset = false;
 
