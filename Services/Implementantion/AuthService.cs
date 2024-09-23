@@ -154,7 +154,7 @@ namespace OverflowBackend.Services.Implementantion
                     Username = username,
                     Password = _passwordHashService.HashPassword(password),
                     Email = email,
-                    Rank = 1000,
+                    Rank = 1200,
                     NumberOfGames = 0
                 };
                 await _dbContext.Users.AddAsync(user);
@@ -384,7 +384,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     if(username != null)
                     {
-                        await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username, Rank = 1000 });
+                        await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username, Rank = 1200 });
                         _dbContext.SaveChanges();
                     }
                     else
