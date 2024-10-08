@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SqlServer.Server;
 using Newtonsoft.Json.Linq;
@@ -116,7 +117,7 @@ namespace OverflowBackend.Services.Implementantion
                     maybe.SetSuccess(new Tokens() 
                     {
                          BearerToken =  TokenHelper.GenerateJwtToken(username, session, false), 
-                         RefreshToken = TokenHelper.GenerateJwtToken(username, session, isAdmin: false) ,
+                         RefreshToken = TokenHelper.GenerateJwtToken(username, session, isRefreshToken: true, isAdmin: false) ,
                          Session = session
                     });
                 }
@@ -192,7 +193,7 @@ namespace OverflowBackend.Services.Implementantion
                 var session = await HandleSession(username);
                 if (user != null)
                 {
-                    var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isAdmin: false);
+                    var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isRefreshToken: true, isAdmin: false);
                     result.SetSuccess(refreshedToken);
                     return result;
                 }
@@ -404,7 +405,7 @@ namespace OverflowBackend.Services.Implementantion
                 response.SetSuccess(new Tokens() 
                 {
                     BearerToken =  TokenHelper.GenerateJwtToken(user.Username, session, true), 
-                    RefreshToken =  TokenHelper.GenerateJwtToken(user.Username,session, isAdmin: false),
+                    RefreshToken =  TokenHelper.GenerateJwtToken(user.Username,session,isRefreshToken: true, isAdmin: false),
                     Username = user.Username
                 });
             }

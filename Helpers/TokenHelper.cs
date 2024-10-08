@@ -16,24 +16,20 @@ namespace OverflowBackend.Helpers
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var issuer = "overflowapp.xyz";
             var audience = "endpoint";
-            var claims = !isRefreshToken ? new[]
+            var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username), // User identifier from Google
                 new Claim(JwtRegisteredClaimNames.Jti, sessionId), // Unique JWT ID
                 new Claim(JwtRegisteredClaimNames.Iss, issuer), // Token issuer
                 new Claim(JwtRegisteredClaimNames.Aud, audience),
                 new Claim("Role", isAdmin ? "admin" : "user")// Token audience
-            } : new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, username),
-                new Claim(JwtRegisteredClaimNames.Jti, sessionId),
             };
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: isRefreshToken ? DateTime.UtcNow.AddHours(8) : DateTime.UtcNow.AddMinutes(30),
+                expires: isRefreshToken ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMinutes(30),
                 signingCredentials: credentials
             );
 
