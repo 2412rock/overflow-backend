@@ -193,7 +193,7 @@ namespace OverflowBackend.Services.Implementantion
                 var session = await HandleSession(username);
                 if (user != null)
                 {
-                    var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isRefreshToken: true, isAdmin: false);
+                    var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isAdmin: false);
                     result.SetSuccess(refreshedToken);
                     return result;
                 }
