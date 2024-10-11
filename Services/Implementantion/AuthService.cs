@@ -385,6 +385,7 @@ namespace OverflowBackend.Services.Implementantion
                 {
                     if(username != null)
                     {
+                        AppStatsLogger.LogSignUp(username, null);
                         await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username, Rank = 1200 });
                         _dbContext.SaveChanges();
                     }
