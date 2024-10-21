@@ -171,8 +171,19 @@ namespace OverflowBackend.Services.Implementantion
                         continue;
                     }
 
-                    var friendRequestExists = await _dbContext.Friends.AnyAsync(e => e.FriendUserId == user.UserId && e.UserId == myUser.UserId);
+                    var friendRequestExists = await _dbContext.Friends.AnyAsync(e => (e.FriendUserId == user.UserId && e.UserId == myUser.UserId));
+                    var friendRequestExistsInverse = await _dbContext.Friends.AnyAsync(e => (e.FriendUserId == myUser.UserId && e.UserId == user.UserId));
+
                     if (friendRequestExists)
+                    {
+                        searchResultsList.Add(new UserSearchResult()
+                        {
+                            AlreadyAdded = true,
+                            Username = user.Username,
+                            Rank = user.Rank
+                        });
+                    }
+                    else if (friendRequestExistsInverse)
                     {
                         searchResultsList.Add(new UserSearchResult()
                         {
