@@ -57,6 +57,14 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpPost]
+        [Route("api/signinApple")]
+        public async Task<IActionResult> LoginApple(LoginGoogleRequest request)
+        {
+            var result = await _authService.LoginApple(request.Email, request.Username, request.IdToken);
+            return Ok(result);
+        }
+
         [HttpGet]
         [AuthorizationFilter]
         [Route("api/canResetPassword")]

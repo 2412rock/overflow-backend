@@ -10,6 +10,7 @@ namespace OverflowBackend.Services.Interface
         public Task<Maybe<Tokens>> SignIn(string username, string password);
         public Task<Maybe<string>> RefreshToken(string token);
         public Task<Maybe<Tokens>> LoginGoogle(string email, string? username, string idToken);
+        public Task<Maybe<Tokens>> LoginApple(string email, string? username, string idToken);
         public Task<Maybe<bool>> ResetPassword(string username, string oldPassword, string newPassword);
         public Task<Maybe<bool>> CanResetPasswordResult(string username);
         public Task<Maybe<bool>> DeleteAccount(string username);

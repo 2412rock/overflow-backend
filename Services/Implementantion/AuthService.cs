@@ -369,6 +369,52 @@ namespace OverflowBackend.Services.Implementantion
             }
             return maybe;
         }
+        public async Task<Maybe<Tokens>> LoginApple(string email, string? username, string idToken) 
+        {
+            var response = new Maybe<Tokens>();
+            if (username != null && username.Length > 14)
+            {
+                response.SetException("Username too long");
+                return response;
+            }
+            var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email);
+            if (await AppleVerficationHelper.ValidateAppleIdToken(idToken))
+            {
+                if (user == null)
+                {
+                    if (username != null)
+                    {
+                        AppStatsLogger.LogSignUp(username, null);
+                        await _dbContext.Users.AddAsync(new DBUser() { Email = email, Password = "", Username = username, Rank = 1200 });
+                        _dbContext.SaveChanges();
+                    }
+                    else
+                    {
+                        response.SetException("usernotexists");
+                        return response;
+                    }
+                }
+                user = user == null ? await _dbContext.Users.FirstOrDefaultAsync(e => e.Email == email) : user;
+                if (user == null)
+                {
+                    response.SetException("could not find user");
+                    return response;
+                }
+                var session = await HandleSession(user.Username);
+                AppStatsLogger.LogSignIn(user.Username, null);
+                response.SetSuccess(new Tokens()
+                {
+                    BearerToken = TokenHelper.GenerateJwtToken(user.Username, session, true),
+                    RefreshToken = TokenHelper.GenerateJwtToken(user.Username, session, isRefreshToken: true, isAdmin: false),
+                    Username = user.Username
+                });
+            }
+            else
+            {
+                response.SetException("Invalid google token");
+            }
+            return response;
+        }
 
         public async Task<Maybe<Tokens>> LoginGoogle(string email, string? username, string idToken)
         {
