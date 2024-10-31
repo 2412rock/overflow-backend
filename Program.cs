@@ -71,7 +71,7 @@ string hostIp = env == "Development" ? "192.168.1.134" : localIp;
 
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>
-    options.UseSqlServer($"Server={hostIp},1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
+    options.UseSqlServer($"Server=10.244.225.232,1433;Database=OverflowDB;User Id=sa;Password={saPassword};TrustServerCertificate=True"));
 builder.Services.AddScoped<StartupService>();
 builder.Logging.ClearProviders();
 builder.Logging.AddProvider(new LoggerProvider());
