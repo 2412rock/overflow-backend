@@ -10,6 +10,7 @@ namespace OverflowBackend.Services
             public DbSet<DBUser> Users { get; set; }
             public DbSet<DBFriend> Friends { get; set; }
             public DbSet<DBVersion> Versions { get; set; }
-            public DbSet<DBUserSession> UserSessions { get; set; }  
+            public DbSet<DBUserSession> UserSessions { get; set; }
+            public DbSet<DbBlocked> BlockedUsers { get; set; }
     }
 }

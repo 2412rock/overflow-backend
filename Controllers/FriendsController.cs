@@ -71,6 +71,33 @@ namespace OverflowBackend.Controllers
             return Ok(result);
         }
 
+        [HttpPost]
+        [AuthorizationFilter]
+        [Route("api/blockUser")]
+        public async Task<IActionResult> BlockUser([FromBody] FriendRequest request)
+        {
+            var result = await _friendService.BlockUser((string)HttpContext.Items["username"], request.FriendUsername);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [AuthorizationFilter]
+        [Route("api/getBlockedUsers")]
+        public async Task<IActionResult> GetBlockedUsers()
+        {
+            var result = await _friendService.GetBlockedUsers((string)HttpContext.Items["username"]);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [AuthorizationFilter]
+        [Route("api/unblockUser")]
+        public async Task<IActionResult> UnblockUser(FriendRequest request)
+        {
+            var result = await _friendService.UnblockUser((string)HttpContext.Items["username"], request.FriendUsername);
+            return Ok(result);
+        }
+
         [HttpGet]
         [AuthorizationFilter]
         [Route("api/getFriendRequests")]
