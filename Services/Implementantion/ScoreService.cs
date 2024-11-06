@@ -17,20 +17,34 @@ namespace OverflowBackend.Services.Implementantion
             _dbContext = dbContext;
         }
 
-        public async Task<Maybe<List<Score>>> GetHighScores()
+        public async Task<Maybe<List<Score>>> GetHighScores(string myUsername)
         {
             var maybe = new Maybe<List<Score>>();
-
-            var top10Scores = await _dbContext.Users
+            try
+            {
+                var top10Scores = await _dbContext.Users
                 .FromSqlRaw(
-                    @"SELECT TOP 10 Username, Rank
-              FROM Users
-              WHERE Rank IS NOT NULL
-              ORDER BY Rank DESC, UserId ASC")
+                  @"SELECT TOP 10 Username, Rank
+                  FROM Users
+                  WHERE Rank IS NOT NULL
+                  ORDER BY Rank DESC, UserId ASC")
                 .Select(e => new Score { Username = e.Username, Rank = e.Rank })
                 .ToListAsync();
-
-            maybe.SetSuccess(top10Scores);
+                var processedScores = new List<Score>();
+                top10Scores.ForEach(score => {
+                    var any = _dbContext.BlockedUsers.Any(e => e.Username == myUsername && e.BlockedUsername == score.Username);
+                    if (any)
+                    {
+                        score.Username = "Hidden";
+                    }
+                });
+                maybe.SetSuccess(top10Scores);
+            }
+            catch(Exception e)
+            {
+                maybe.SetException("Something went wrong");
+            }
+            
             return maybe;
         }
 

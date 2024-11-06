@@ -62,6 +62,27 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<string>> ReportUser(string myUsername, string reportedUsername, string description)
+        {
+            var maybe = new Maybe<string>();
+            try
+            {
+                _dbContext.UserReports.Add(new DbReport()
+                {
+                    Username = myUsername,
+                    ReportedUsername = reportedUsername,
+                    ReportDescription = description,
+                });
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Success");
+            }
+            catch(Exception e)
+            {
+                maybe.SetException("Something went wrong");
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<string>> AcceptFriendRequest(string myUsername, string friendUsername)
         {
             var maybe = new Maybe<string>();
@@ -112,6 +133,53 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<string>> BlockUser(string myUsername, string blockUsername)
+        {
+            var maybe = new Maybe<string>();
+            // Try unfriend in case they are friends
+            await Unfriend(myUsername, blockUsername);
+            var any = await _dbContext.BlockedUsers.AnyAsync(e => e.Username == myUsername && e.BlockedUsername == blockUsername);
+            if (!any)
+            {
+                _dbContext.BlockedUsers.Add(new DbBlocked()
+                {
+                    Username = myUsername,
+                    BlockedUsername = blockUsername
+                });
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Success");
+            }
+            else
+            {
+                maybe.SetException("User already blocked");
+            }
+            return maybe;
+        }
+
+        public async Task<Maybe<string>> UnblockUser(string myUsername, string blockedUsername)
+        {
+            var maybe = new Maybe<string>();
+            try
+            {
+                var block = await _dbContext.BlockedUsers.FirstOrDefaultAsync(e => e.Username == myUsername && e.BlockedUsername == blockedUsername);
+                if(block != null)
+                {
+                    _dbContext.BlockedUsers.Remove(block);
+                    await _dbContext.SaveChangesAsync();
+                    maybe.SetSuccess("Success");
+                }
+                else
+                {
+                    maybe.SetException("Could not find blocked user");
+                }
+            }
+            catch(Exception e)
+            {
+                maybe.SetException("Something went wrong");
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<string>> DeclineFriendRequest(string myUsername, string friendUsername)
         {
             var maybe = new Maybe<string>();
@@ -156,6 +224,27 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<List<string>>> GetBlockedUsers(string myUsername)
+        {
+            var maybe = new Maybe<List<string>>();
+
+            try
+            {
+                var list = await _dbContext.BlockedUsers.Where(e => e.Username == myUsername).ToListAsync();
+                var usernames = new List<string>();
+                list.ForEach(element =>
+                {
+                    usernames.Add(element.BlockedUsername);
+                });
+                maybe.SetSuccess(usernames);
+            }
+            catch(Exception e)
+            {
+                maybe.SetException("Something went wrong");
+            }
+
+            return maybe;
+        }
         public async Task<Maybe<List<UserSearchResult>>> GetUsernames(string myUsername, string startsWith)
         {
             var maybe = new Maybe<List<UserSearchResult>>();
@@ -173,33 +262,46 @@ namespace OverflowBackend.Services.Implementantion
 
                     var friendRequestExists = await _dbContext.Friends.AnyAsync(e => (e.FriendUserId == user.UserId && e.UserId == myUser.UserId));
                     var friendRequestExistsInverse = await _dbContext.Friends.AnyAsync(e => (e.FriendUserId == myUser.UserId && e.UserId == user.UserId));
+                    var blockedUser = await _dbContext.BlockedUsers.AnyAsync(e => (e.Username == myUsername && e.BlockedUsername == user.Username)
+                    || (e.Username == user.Username && e.BlockedUsername == myUsername));
 
                     if (friendRequestExists)
                     {
-                        searchResultsList.Add(new UserSearchResult()
+                        if (!blockedUser)
                         {
-                            AlreadyAdded = true,
-                            Username = user.Username,
-                            Rank = user.Rank
-                        });
+                            searchResultsList.Add(new UserSearchResult()
+                            {
+                                AlreadyAdded = true,
+                                Username = user.Username,
+                                Rank = user.Rank
+                            });
+                        }
+                        
                     }
                     else if (friendRequestExistsInverse)
                     {
-                        searchResultsList.Add(new UserSearchResult()
+                        if (!blockedUser)
                         {
-                            AlreadyAdded = true,
-                            Username = user.Username,
-                            Rank = user.Rank
-                        });
+                            searchResultsList.Add(new UserSearchResult()
+                            {
+                                AlreadyAdded = true,
+                                Username = user.Username,
+                                Rank = user.Rank
+                            });
+                        }
                     }
                     else
                     {
-                        searchResultsList.Add(new UserSearchResult()
+                        if (!blockedUser)
                         {
-                            AlreadyAdded = false,
-                            Username = user.Username,
-                            Rank = user.Rank
-                        });
+                            searchResultsList.Add(new UserSearchResult()
+                            {
+                                AlreadyAdded = false,
+                                Username = user.Username,
+                                Rank = user.Rank
+                            });
+                        }
+                        
                     }
                 }
                 maybe.SetSuccess(searchResultsList);

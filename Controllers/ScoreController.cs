@@ -15,9 +15,10 @@ namespace OverflowBackend.Controllers
         }
 
         [Route("api/highScores")]
+        [AuthorizationFilter]
         public async Task<IActionResult> GetHighScores()
         {
-            var result = await _scoreService.GetHighScores();
+            var result = await _scoreService.GetHighScores((string)HttpContext.Items["username"]);
             return Ok(result);
         }
 

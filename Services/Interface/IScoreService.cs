@@ -6,7 +6,7 @@ namespace OverflowBackend.Services.Interface
 {
     public interface IScoreService
     {
-        public Task<Maybe<List<Score>>> GetHighScores();
+        public Task<Maybe<List<Score>>> GetHighScores(string myUsername);
 
         public Task<Maybe<Score>> GetPlayerScoreAsync(string username);
 
