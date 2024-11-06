@@ -106,5 +106,14 @@ namespace OverflowBackend.Controllers
             var result = await _friendService.GetFriendRequests((string)HttpContext.Items["username"]);
             return Ok(result);
         }
+
+        [HttpPost]
+        [AuthorizationFilter]
+        [Route("api/reportUser")]
+        public async Task<IActionResult> ReportUser(ReportRequest request)
+        {
+            var result = await _friendService.ReportUser((string)HttpContext.Items["username"], request.ReportedUsername, request.Description);
+            return Ok(result);
+        }
     }
 }

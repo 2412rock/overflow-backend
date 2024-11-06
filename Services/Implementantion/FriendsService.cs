@@ -62,6 +62,27 @@ namespace OverflowBackend.Services.Implementantion
             return maybe;
         }
 
+        public async Task<Maybe<string>> ReportUser(string myUsername, string reportedUsername, string description)
+        {
+            var maybe = new Maybe<string>();
+            try
+            {
+                _dbContext.UserReports.Add(new DbReport()
+                {
+                    Username = myUsername,
+                    ReportedUsername = reportedUsername,
+                    ReportDescription = description,
+                });
+                await _dbContext.SaveChangesAsync();
+                maybe.SetSuccess("Success");
+            }
+            catch(Exception e)
+            {
+                maybe.SetException("Something went wrong");
+            }
+            return maybe;
+        }
+
         public async Task<Maybe<string>> AcceptFriendRequest(string myUsername, string friendUsername)
         {
             var maybe = new Maybe<string>();
@@ -117,7 +138,7 @@ namespace OverflowBackend.Services.Implementantion
             var maybe = new Maybe<string>();
             // Try unfriend in case they are friends
             await Unfriend(myUsername, blockUsername);
-            var any = await _dbContext.BlockedUsers.AnyAsync(e => e.Username == myUsername || e.BlockedUsername == myUsername);
+            var any = await _dbContext.BlockedUsers.AnyAsync(e => e.Username == myUsername && e.BlockedUsername == blockUsername);
             if (!any)
             {
                 _dbContext.BlockedUsers.Add(new DbBlocked()
