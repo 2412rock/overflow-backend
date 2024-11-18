@@ -350,13 +350,25 @@ namespace OverflowBackend.Services.Implementantion
                     var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserId == friendDB.FriendUserId);
                     if (user != null)
                     {
+                        var status = GetStatus(user.Username);
+                        DateTime lastSeen = DateTime.MinValue;
+                        if(status == FriendOnlineStatus.Offline)
+                        {
+                            var session = await _dbContext.UserSessions.FirstOrDefaultAsync(e => e.Username == user.Username);
+                            if(session != null)
+                            {
+                                lastSeen = session.LastActiveTime;
+                            }
+                            
+                        }
                         friends.Add(new Friend()
                         {
                             UserID = user.UserId,
                             Username = user.Username,
                             Score = user.Rank,
-                            Status = GetStatus(user.Username)
-                    }); ;
+                            Status = status,
+                            LastSeen = GetLastSeen(lastSeen),
+                        });
                     }
                 }
             }
@@ -368,12 +380,25 @@ namespace OverflowBackend.Services.Implementantion
                     var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.UserId == friendDB.UserId);
                     if (user != null)
                     {
+                        var status = GetStatus(user.Username);
+                        DateTime lastSeen = DateTime.MinValue;
+                        if (status == FriendOnlineStatus.Offline)
+                        {
+                            var session = await _dbContext.UserSessions.FirstOrDefaultAsync(e => e.Username == user.Username);
+                            if (session != null)
+                            {
+                                lastSeen = session.LastActiveTime;
+                            }
+
+                        }
+
                         friends.Add(new Friend()
                         {
                             UserID = user.UserId,
                             Username = user.Username,
                             Score = user.Rank,
-                            Status = GetStatus(user.Username)
+                            Status = status,
+                            LastSeen = GetLastSeen(lastSeen),
                         });
                     }
                 }
@@ -381,6 +406,36 @@ namespace OverflowBackend.Services.Implementantion
 
             maybe.SetSuccess(friends);
             return maybe;
+        }
+
+        private static string GetLastSeen(DateTime lastSeenDate)
+        {
+            // Parse the UTC date string to a DateTime object
+            DateTime now = DateTime.UtcNow;  // Get the current UTC time
+
+            // Calculate the difference in seconds
+            TimeSpan difference = now - lastSeenDate;
+            int differenceInSeconds = (int)difference.TotalSeconds;
+
+            if (differenceInSeconds < 60)
+            {
+                return $"{differenceInSeconds} second{(differenceInSeconds > 1 ? "s" : "")} ago";
+            }
+            else if (differenceInSeconds < 3600)
+            {
+                int minutes = (int)(differenceInSeconds / 60);
+                return $"{minutes} minute{(minutes > 1 ? "s" : "")} ago";
+            }
+            else if (differenceInSeconds < 86400)
+            {
+                int hours = (int)(differenceInSeconds / 3600);
+                return $"{hours} hour{(hours > 1 ? "s" : "")} ago";
+            }
+            else
+            {
+                int days = (int)(differenceInSeconds / 86400);
+                return $"{days} day{(days > 1 ? "s" : "")} ago";
+            }
         }
 
         private async Task AddFriends(List<DBFriend> friendsDB, int ofUserId, List<Friend> friends)

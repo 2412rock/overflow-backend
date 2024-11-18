@@ -11,5 +11,8 @@ namespace OverflowBackend.Models.Response
         public int Score {get; set; }
 
         public FriendOnlineStatus Status { get; set; }
+
+        public string LastSeen { get; set; }
+
     }
 }
