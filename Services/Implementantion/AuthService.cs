@@ -91,6 +91,11 @@ namespace OverflowBackend.Services.Implementantion
                 LastActiveTime = DateTime.UtcNow,
                 IsActive = true
             };
+            var existingSessions = await _dbContext.UserSessions.Where(e => e.Username == username).ToListAsync();
+            for(int i = 0; i < existingSessions.Count; i++)
+            {
+                _dbContext.Remove(existingSessions[i]);
+            }
             _dbContext.UserSessions.Add(userSession);
             await _dbContext.SaveChangesAsync();
 
