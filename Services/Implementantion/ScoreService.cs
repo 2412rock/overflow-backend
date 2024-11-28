@@ -42,7 +42,7 @@ namespace OverflowBackend.Services.Implementantion
             }
             catch(Exception e)
             {
-                maybe.SetException("Something went wrong");
+                maybe.SetException("Something went wrong " + e.Message);
             }
             
             return maybe;
