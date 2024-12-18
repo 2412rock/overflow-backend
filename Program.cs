@@ -65,7 +65,6 @@ builder.Services.AddSignalR();
 
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
-var localIp = Environment.GetEnvironmentVariable("LOCAL_IP");
 var env = builder.Environment.EnvironmentName;
 string hostIp = env == "Development" ? "192.168.1.134" : "10.244.155.207";
 
