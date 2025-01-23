@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OverflowBackend.Filters;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services;
+using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Controllers
@@ -10,10 +11,10 @@ namespace OverflowBackend.Controllers
     [ApiController]
     public class GameInviteController : ControllerBase
     {
-        private readonly IMatchMakingService _matchMakingService;
+        private readonly MatchMakingService _matchMakingService;
         private readonly IConnectionManager _connectionManager;
         private readonly IVersionService _versionService;
-        public GameInviteController(IMatchMakingService matchMakingService, IConnectionManager connectionManager, IVersionService versionService)
+        public GameInviteController(MatchMakingService matchMakingService, IConnectionManager connectionManager, IVersionService versionService)
         {
             _matchMakingService = matchMakingService;
             _connectionManager = connectionManager;

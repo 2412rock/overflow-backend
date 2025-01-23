@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace OverflowBackend.Services.Implementantion
 {
-    public class MatchMakingService : IMatchMakingService
+    public class MatchMakingService
     {
 
         List<Match> queue = new List<Match>();
@@ -71,34 +71,28 @@ namespace OverflowBackend.Services.Implementantion
             return player1Matched && player2Matched;
         }
 
-        private Maybe<string> RandomMatch(string username)
+        private Maybe<string> RandomMatch(string username, bool isGuest)
         {
             var maybe = new Maybe<string>();
-            if (queue.Count == 0)
+
+            foreach (var match in queue)
             {
-                var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
-                if (GameCollection.List == null)
+                if (match.Player1 != null && match.Player2 == null && !BotMatchedWithBot(match.Player1, username) && match.IsGuest == isGuest/*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
                 {
-                    GameCollection.List = new ConcurrentList<string>();
+                    match.Player2 = username;
+                    maybe.SetSuccess("Matched");
+                    return maybe;
                 }
-                GameCollection.List.Add(match.GameId);
-                queue.Add(match);
+            }
+
+            // prevent player from entering the queue twice
+            var any = queue.Any(e => e.Player1 == username || e.Player2 == username);
+            if (any)
+            {
                 maybe.SetSuccess("Added to queue");
                 return maybe;
             }
-            else
-            {
-                foreach (var match in queue)
-                {
-                    if (match.Player1 != null && match.Player2 == null && !BotMatchedWithBot(match.Player1, username)/*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
-                    {
-                        match.Player2 = username;
-                        maybe.SetSuccess("Matched");
-                        return maybe;
-                    }
-                }
-            }
-            var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString() };
+            var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), IsGuest = isGuest };
             if (GameCollection.List == null)
             {
                 GameCollection.List = new ConcurrentList<string>();
@@ -132,7 +126,7 @@ namespace OverflowBackend.Services.Implementantion
         }
 
 
-        public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername)
+        public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername, bool isGuest)
         {
             lock (locker)
             {
@@ -142,7 +136,7 @@ namespace OverflowBackend.Services.Implementantion
                 }
                 else
                 {
-                    return RandomMatch(username);
+                    return RandomMatch(username, isGuest);
                 }
             }
         }
@@ -151,44 +145,58 @@ namespace OverflowBackend.Services.Implementantion
         {
             var maybe = new Maybe<Match>();
 
-            lock (locker)
+            try
             {
-                Match matchToRemove = null;
-                foreach(var match in queue)
+                lock (locker)
                 {
-                    if(match.Player1 == username || match.Player2 == username)
+                    Match matchToRemove = null;
+                    foreach (var match in queue)
                     {
-                        if(match.Player1 == username)
+                        if (match.Player1 == username || match.Player2 == username)
                         {
-                            match.HearBeatPlayer1 = DateTime.Now;
-                        }
-                        if (match.Player2 == username)
-                        {
-                            match.HearBeatPlayer2 = DateTime.Now;
-                        }
+                            if (match.Player1 == username)
+                            {
+                                match.HearBeatPlayer1 = DateTime.Now;
+                            }
+                            if (match.Player2 == username)
+                            {
+                                match.HearBeatPlayer2 = DateTime.Now;
+                            }
 
-                        if(!String.IsNullOrEmpty(match.Player1) && !String.IsNullOrEmpty(match.Player2))
-                        {
-                            var player1 = dbContext.Users.First(e => e.Username == match.Player1);
-                            var player2 = dbContext.Users.First(e => e.Username == match.Player2);
-                            match.Player1Rank = player1.Rank;
-                            match.Player2Rank = player2.Rank;
+                            if (!String.IsNullOrEmpty(match.Player1) && !String.IsNullOrEmpty(match.Player2))
+                            {
+                                var player1User = dbContext.Users.FirstOrDefault(e => e.Username == match.Player1);
+                                var player2User = dbContext.Users.FirstOrDefault(e => e.Username != match.Player2);
+
+                                var player1Guest = dbContext.GuestUsers.FirstOrDefault(e => e.Username == match.Player1);
+                                var player2Guest = dbContext.GuestUsers.FirstOrDefault(e => e.Username != match.Player2);
+
+                                if (player1User != null && player2User != null)
+                                {
+                                    match.Player1Rank = player1User.Rank;
+                                    match.Player2Rank = player2User.Rank;
+                                }
+                                else if (player2User == null || player1Guest == null) 
+                                {
+                                    throw new Exception("Invalid player");
+                                }                              
+                            }
+
+                            maybe.SetSuccess(match);
                         }
-                        
-                        maybe.SetSuccess(match);
+                    }
+                    if (matchToRemove != null)
+                    {
+                        queue.Remove(matchToRemove);
                     }
                 }
-                if(matchToRemove != null)
-                {
-                    queue.Remove(matchToRemove);
-                }
-            }
-            
-            if (!maybe.IsSuccess)
-            {
-                maybe.SetException("Could not find match");
-            }
 
+
+            }
+            catch(Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
             return maybe;
         }
 
@@ -225,5 +233,6 @@ namespace OverflowBackend.Services.Implementantion
         public DateTime? HearBeatPlayer2 = null;
 
         public string GameId { get; set; }
+        public bool IsGuest { get; set; }
     }
 }

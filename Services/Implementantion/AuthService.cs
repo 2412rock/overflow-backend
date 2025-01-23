@@ -13,7 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace OverflowBackend.Services.Implementantion
 {
-    public class AuthService: IAuthService
+    public class AuthService
     {
         private readonly OverflowDbContext _dbContext;
         private readonly IPasswordHashService _passwordHashService;
@@ -195,10 +195,18 @@ namespace OverflowBackend.Services.Implementantion
             if (!TokenHelper.IsTokenExpired(token) && username != null)
             {
                 var user = await _dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
-                var session = await HandleSession(username);
+                var guestUser = await _dbContext.GuestUsers.FirstOrDefaultAsync(e => e.Username == username);
                 if (user != null)
                 {
+                    var session = await HandleSession(username);
                     var refreshedToken = TokenHelper.GenerateJwtToken(username,session, isAdmin: false);
+                    result.SetSuccess(refreshedToken);
+                    return result;
+                }
+                else if(guestUser != null)
+                {
+                    var session = await HandleSession(username);
+                    var refreshedToken = TokenHelper.GenerateJwtToken(username, session, isAdmin: false);
                     result.SetSuccess(refreshedToken);
                     return result;
                 }
@@ -466,6 +474,81 @@ namespace OverflowBackend.Services.Implementantion
                 response.SetException("Invalid google token");
             }
             return response;
+        }
+
+        private async Task RemoveUnusedGuestUser()
+        {
+            DateTime currentDate = DateTime.Now;
+
+            var cutoffDate = currentDate.AddDays(-30); // Calculate the date 30 days ago
+            var expiredUsers = await _dbContext.UserSessions
+                .Where(e => e.LastActiveTime <= cutoffDate)
+                .Select(e => e.Username)
+                .ToListAsync();
+            for (int i=0; i < expiredUsers.Count; i++)
+            {
+                var user = await _dbContext.GuestUsers.FirstOrDefaultAsync(e => e.Username == expiredUsers[i]);
+                if(user != null)
+                {
+                    _dbContext.GuestUsers.Remove(user);
+                }
+            }
+            await _dbContext.SaveChangesAsync();
+        }
+        public async Task<Maybe<Tokens>> ContinueAsGuest()
+        {
+            var maybe = new Maybe<Tokens>();
+
+            try
+            {
+                await RemoveUnusedGuestUser();
+                string username;
+                int tries = 0;
+                while (true)
+                {
+                    var generatedUsername = GenerateRandomGuestUsername();
+                    var any = await _dbContext.GuestUsers.AnyAsync(e => e.Username == generatedUsername);
+                    tries++;
+                    if(tries > 100)
+                    {
+                        maybe.SetException("Could not generate guest username");
+                        return maybe;
+                    }
+                    if (!any)
+                    {
+                        username = generatedUsername;
+                        await _dbContext.GuestUsers.AddAsync(new DBGuestUser()
+                        {
+                            Username = username,
+                            NumberOfGames = 0
+                        });
+                        await _dbContext.SaveChangesAsync();
+                        break;
+                    }
+                }
+                
+                var session = await HandleSession(username);
+                var tokens = new Tokens()
+                {
+                    BearerToken = TokenHelper.GenerateJwtToken(username, session, true),
+                    RefreshToken = TokenHelper.GenerateJwtToken(username, session, isRefreshToken: true, isAdmin: false),
+                    Username = username
+                };
+                maybe.SetSuccess(tokens);
+            }
+            catch(Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+
+            return maybe;
+        }
+
+        private static string GenerateRandomGuestUsername()
+        {
+            Random random = new Random();
+            int randomNumber = random.Next(100000, 999999); // Generates a random number between 100000 and 999999
+            return "guest" + randomNumber.ToString();
         }
 
         private bool VerifyGoogleToken(string idToken)

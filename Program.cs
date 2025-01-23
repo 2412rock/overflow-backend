@@ -51,13 +51,13 @@ builder.Services.AddCors(options =>
 
 });
 
-builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddTransient<AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IRedisService, RedisService>();
 builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddTransient<IMailService, MailService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
-builder.Services.AddSingleton<IMatchMakingService, MatchMakingService>();
+builder.Services.AddSingleton<MatchMakingService>();
 builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
 
 builder.Services.AddTransient<IVersionService, VersionService>();
@@ -66,7 +66,7 @@ builder.Services.AddSignalR();
 
 var saPassword = Environment.GetEnvironmentVariable("SA_PASSWORD");
 var env = builder.Environment.EnvironmentName;
-string hostIp = env == "Development" ? "192.168.1.134" : "10.244.17.97";
+string hostIp = "10.244.17.97";
 
 Console.WriteLine($"Connecting to DB IP {hostIp}");
 builder.Services.AddDbContext<OverflowDbContext>(options =>

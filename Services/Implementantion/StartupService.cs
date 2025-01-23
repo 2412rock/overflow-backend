@@ -9,13 +9,11 @@ namespace OverflowBackend.Services.Implementantion
     public class StartupService: IStartupService
     {
         private readonly OverflowDbContext _context;
-        private readonly IMatchMakingService _matchMakingService;
         private readonly IConnectionManager _connectionManager;
 
-        public StartupService(OverflowDbContext context, IMatchMakingService matchMakingService, IConnectionManager connectionManager)
+        public StartupService(OverflowDbContext context, IConnectionManager connectionManager)
         {
             _context = context;
-            _matchMakingService = matchMakingService;
             _connectionManager = connectionManager;
 
             Thread thread = new Thread(new ThreadStart(StatsCheck));

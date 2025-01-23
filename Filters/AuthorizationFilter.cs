@@ -26,7 +26,8 @@ namespace OverflowBackend.Filters
         }
         public async void OnAuthorization(AuthorizationFilterContext context)
         {
-            if (!GameVersionValid(context))
+            var isNotValid = !GameVersionValid(context);
+            if (isNotValid)
             {
                 context.Result = new StatusCodeResult(405);
                 return;

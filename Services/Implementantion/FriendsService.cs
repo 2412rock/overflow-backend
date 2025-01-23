@@ -17,9 +17,9 @@ namespace OverflowBackend.Services.Implementantion
     {
         private readonly OverflowDbContext _dbContext;
         private readonly IConnectionManager _connectionManager;
-        private readonly IMatchMakingService _matchMakingService;
+        private readonly MatchMakingService _matchMakingService;
 
-        public FriendService(OverflowDbContext dbContext, IConnectionManager connectionManager, IMatchMakingService matchMakingService)
+        public FriendService(OverflowDbContext dbContext, IConnectionManager connectionManager, MatchMakingService matchMakingService)
         {
             _dbContext = dbContext;
             _connectionManager = connectionManager;

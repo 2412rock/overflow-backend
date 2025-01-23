@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OverflowBackend.Filters;
 using OverflowBackend.Models.Requests;
 using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services;
+using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Controllers
@@ -11,9 +13,9 @@ namespace OverflowBackend.Controllers
     [ApiController]
     public class MatchMakingController : ControllerBase
     {
-        private readonly IMatchMakingService _matchMakingService;
+        private readonly MatchMakingService _matchMakingService;
         private readonly OverflowDbContext _dbContext;
-        public MatchMakingController(IMatchMakingService matchMakingService, OverflowDbContext dbContext)
+        public MatchMakingController(MatchMakingService matchMakingService, OverflowDbContext dbContext)
         {
             _matchMakingService = matchMakingService;
             _dbContext = dbContext;
@@ -22,9 +24,10 @@ namespace OverflowBackend.Controllers
         [HttpPost]
         [AuthorizationFilter]
         [Route("api/addtoqueue")]
-        public IActionResult AddToQueue([FromBody] AddToQueueRequest request)
+        public async Task<IActionResult> AddToQueue([FromBody] AddToQueueRequest request)
         {
-            var result = _matchMakingService.AddOrMatchPlayer((string)HttpContext.Items["username"], request.Prematch, request.WithUsername);
+            var isGuest = await _dbContext.GuestUsers.AnyAsync(e => e.Username == (string)HttpContext.Items["username"]);
+            var result = _matchMakingService.AddOrMatchPlayer((string)HttpContext.Items["username"], request.Prematch, request.WithUsername, isGuest);
             return Ok(result);
         }
 

@@ -19,7 +19,8 @@ namespace OverflowBackend.Services.Implementantion
             Version requiredVersion = new Version(requiredVersionString);
 
             // Compare versions
-            return currentVersion >= requiredVersion;
+            var val =  currentVersion >= requiredVersion;
+            return val;
         }
 
         public async Task<Maybe<bool>> IsGameVersionValid(string currentVersion)

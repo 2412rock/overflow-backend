@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OverflowBackend.Filters;
 using OverflowBackend.Models.Requests;
+using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
 
 namespace OverflowBackend.Controllers
@@ -10,9 +11,9 @@ namespace OverflowBackend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly AuthService _authService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(AuthService authService)
         {
             _authService = authService;
         }
@@ -62,6 +63,14 @@ namespace OverflowBackend.Controllers
         public async Task<IActionResult> LoginApple(LoginGoogleRequest request)
         {
             var result = await _authService.LoginApple(request.Email, request.Username, request.IdToken);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/continueAsGuest")]
+        public async Task<IActionResult> ContinueAsGuest()
+        {
+            var result = await _authService.ContinueAsGuest();
             return Ok(result);
         }
 

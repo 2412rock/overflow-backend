@@ -29,7 +29,7 @@ namespace OverflowBackend.Helpers
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: isRefreshToken ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddMinutes(30),
+                expires: isRefreshToken ? DateTime.UtcNow.AddYears(1) : DateTime.UtcNow.AddSeconds(10),
                 signingCredentials: credentials
             );
 
