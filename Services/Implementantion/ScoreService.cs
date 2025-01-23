@@ -92,7 +92,7 @@ namespace OverflowBackend.Services.Implementantion
 
 
 
-        public int? GetPlayerScore(string username)
+        public int GetPlayerScore(string username)
         {
             var score = _dbContext.Users.FirstOrDefault(e => e.Username == username);
             if (score != null)
@@ -100,7 +100,7 @@ namespace OverflowBackend.Services.Implementantion
                 return score.Rank;
             }
 
-            return null;
+            return -1;
         }
 
         private double GetExpectedScore(int rankA, int rankB)

@@ -166,17 +166,17 @@ namespace OverflowBackend.Services.Implementantion
                             if (!String.IsNullOrEmpty(match.Player1) && !String.IsNullOrEmpty(match.Player2))
                             {
                                 var player1User = dbContext.Users.FirstOrDefault(e => e.Username == match.Player1);
-                                var player2User = dbContext.Users.FirstOrDefault(e => e.Username != match.Player2);
+                                var player2User = dbContext.Users.FirstOrDefault(e => e.Username == match.Player2);
 
                                 var player1Guest = dbContext.GuestUsers.FirstOrDefault(e => e.Username == match.Player1);
-                                var player2Guest = dbContext.GuestUsers.FirstOrDefault(e => e.Username != match.Player2);
+                                var player2Guest = dbContext.GuestUsers.FirstOrDefault(e => e.Username == match.Player2);
 
                                 if (player1User != null && player2User != null)
                                 {
                                     match.Player1Rank = player1User.Rank;
                                     match.Player2Rank = player2User.Rank;
                                 }
-                                else if (player2User == null || player1Guest == null) 
+                                else if (player1Guest == null || player1Guest == null) 
                                 {
                                     throw new Exception("Invalid player");
                                 }                              

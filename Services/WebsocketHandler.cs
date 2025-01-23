@@ -449,18 +449,14 @@ namespace OverflowBackend.Services
         private static void SetPlayerScore(Game game, string playerName, bool isPlayer1)
         {
             var playerScore = _scoreService.GetPlayerScore(playerName);
-            if (!playerScore.HasValue)
-            {
-                throw new ApplicationException($"Could not get player {(isPlayer1 ? "1" : "2")} rank");
-            }
 
             if (isPlayer1)
             {
-                game.Player1Score = playerScore.Value;
+                game.Player1Score = playerScore;
             }
             else
             {
-                game.Player2Score = playerScore.Value;
+                game.Player2Score = playerScore;
             }
         }
 

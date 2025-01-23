@@ -501,7 +501,7 @@ namespace OverflowBackend.Services.Implementantion
 
             try
             {
-                await RemoveUnusedGuestUser();
+              //  await RemoveUnusedGuestUser();
                 string username;
                 int tries = 0;
                 while (true)
@@ -547,7 +547,7 @@ namespace OverflowBackend.Services.Implementantion
         private static string GenerateRandomGuestUsername()
         {
             Random random = new Random();
-            int randomNumber = random.Next(100000, 999999); // Generates a random number between 100000 and 999999
+            int randomNumber = random.Next(0, 999999); // Generates a random number between 100000 and 999999
             return "guest" + randomNumber.ToString();
         }
 
