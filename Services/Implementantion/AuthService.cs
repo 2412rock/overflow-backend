@@ -76,7 +76,7 @@ namespace OverflowBackend.Services.Implementantion
         private async Task<string> HandleSession(string username)
         {
             var existingSession = await _dbContext.UserSessions.FirstOrDefaultAsync(s => s.Username == username && s.IsActive);
-            if (existingSession != null)
+            if (existingSession != null) 
             {
                 existingSession.IsActive = false;
                 await _dbContext.SaveChangesAsync();
