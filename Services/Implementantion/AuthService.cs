@@ -501,7 +501,7 @@ namespace OverflowBackend.Services.Implementantion
 
             try
             {
-              //  await RemoveUnusedGuestUser();
+                await RemoveUnusedGuestUser();
                 string username;
                 int tries = 0;
                 while (true)
