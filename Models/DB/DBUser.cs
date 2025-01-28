@@ -13,8 +13,8 @@ namespace OverflowBackend.Models.DB
         public string? Email { get; set; }
         public string Password { get; set; }
         public int Rank { get; set; }
-
         public int NumberOfGames { get; set; }
+        public bool IsBot { get; set; }
 
     }
 }

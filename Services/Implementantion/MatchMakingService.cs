@@ -60,46 +60,77 @@ namespace OverflowBackend.Services.Implementantion
             
         }
 
-        private bool BotMatchedWithBot(string player1, string player2)
+        private bool BotMatchedWithBot(Match match, bool player2IsBot)
         {
-            var usernames = new string[] { "random_bot", "Pixel", "Voyager", "Nebula", "Explorer", "Scribe" };
+            /*var usernames = new string[] { "random_bot", "Pixel", "Voyager", "Nebula", "Explorer", "Scribe" };
 
             bool player1Matched = usernames.Contains(player1);
-            bool player2Matched = usernames.Contains(player2);
+            bool player2Matched = usernames.Contains(player2);*/
 
             // Return true if both usernames are in the list of valid usernames
-            return player1Matched && player2Matched;
+            return match.Player1IsBot && player2IsBot;
         }
 
-        private Maybe<string> RandomMatch(string username, bool isGuest)
+        private async Task<Maybe<string>> RandomMatch(string username, OverflowDbContext dbContext)
         {
             var maybe = new Maybe<string>();
-
-            foreach (var match in queue)
+            try
             {
-                if (match.Player1 != null && match.Player2 == null && !BotMatchedWithBot(match.Player1, username) && match.IsGuest == isGuest/*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
+                var isGuest = false;
+                var isBot = false;
+
+                var userGuest = await dbContext.GuestUsers.FirstOrDefaultAsync(e => e.Username == username);
+                var user = await dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+
+                if (userGuest != null)
                 {
-                    match.Player2 = username;
-                    maybe.SetSuccess("Matched");
-                    return maybe;
+                    isGuest = true;
+                    if (userGuest.IsBot)
+                    {
+                        isBot = true;
+                    }
+                }
+                else if (user != null)
+                {
+                    if (user.IsBot)
+                    {
+                        isBot = true;
+                    }
+                }
+
+                lock (locker)
+                {
+                    foreach (var match in queue)
+                    {
+                        if (match.Player1 != null && match.Player2 == null && !BotMatchedWithBot(match, isBot) && match.IsGuest == isGuest/*&& !(match.SeenByPlayer1 || match.SeenByPlayer2)*/)
+                        {
+                            match.Player2 = username;
+                            maybe.SetSuccess("Matched");
+                            return maybe;
+                        }
+                    }
+
+                    // prevent player from entering the queue twice
+                    var any = queue.Any(e => e.Player1 == username || e.Player2 == username);
+                    if (any)
+                    {
+                        maybe.SetSuccess("Added to queue");
+                        return maybe;
+                    }
+                    var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), IsGuest = isGuest, Player1IsBot = isBot };
+                    if (GameCollection.List == null)
+                    {
+                        GameCollection.List = new ConcurrentList<string>();
+                    }
+                    GameCollection.List.Add(newMatch.GameId);
+                    queue.Add(newMatch);
+                    maybe.SetSuccess("Added to queue");
                 }
             }
-
-            // prevent player from entering the queue twice
-            var any = queue.Any(e => e.Player1 == username || e.Player2 == username);
-            if (any)
+            catch(Exception e)
             {
-                maybe.SetSuccess("Added to queue");
-                return maybe;
+                maybe.SetException("Exception occured gettin random match " + e.Message);
             }
-            var newMatch = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), IsGuest = isGuest };
-            if (GameCollection.List == null)
-            {
-                GameCollection.List = new ConcurrentList<string>();
-            }
-            GameCollection.List.Add(newMatch.GameId);
-            queue.Add(newMatch);
-            maybe.SetSuccess("Added to queue");
             return maybe;
         }
 
@@ -108,37 +139,39 @@ namespace OverflowBackend.Services.Implementantion
         {
             var maybe = new Maybe<string>();
 
-            var anyMatches = queue.Any(e => e.Player1 == username || e.Player2 == username);
-
-            if (!anyMatches)
+            lock (locker)
             {
-                var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), Player2 = withUsername };
-                if (GameCollection.List == null)
-                {
-                    GameCollection.List = new ConcurrentList<string>();
-                }
-                GameCollection.List.Add(match.GameId);
-                queue.Add(match);
-            }
+                var anyMatches = queue.Any(e => e.Player1 == username || e.Player2 == username);
 
-            maybe.SetSuccess("Added to queue");
+                if (!anyMatches)
+                {
+                    var match = new Match() { Player1 = username, GameId = Guid.NewGuid().ToString(), Player2 = withUsername };
+                    if (GameCollection.List == null)
+                    {
+                        GameCollection.List = new ConcurrentList<string>();
+                    }
+                    GameCollection.List.Add(match.GameId);
+                    queue.Add(match);
+                }
+
+                maybe.SetSuccess("Added to queue");
+            }
             return maybe;
         }
 
 
-        public Maybe<string> AddOrMatchPlayer(string username, bool? prematch, string? withUsername, bool isGuest)
+        public async Task<Maybe<string>> AddToQueue(string username, bool? prematch, string? withUsername, OverflowDbContext dbContext)
         {
-            lock (locker)
-            {
+            
                 if (prematch.HasValue && withUsername != null)
                 {
                     return Prematch(username, withUsername);
                 }
                 else
                 {
-                    return RandomMatch(username, isGuest);
+                    return await RandomMatch(username, dbContext);
                 }
-            }
+
         }
 
         public Maybe<Match> FindMyMatch(string username, OverflowDbContext dbContext)
@@ -178,16 +211,15 @@ namespace OverflowBackend.Services.Implementantion
                                 }
                                 else if (player1Guest == null || player1Guest == null) 
                                 {
-                                    throw new Exception("Invalid player");
+                                    matchToRemove = match;
+                                    queue.Remove(matchToRemove);
+                                    maybe.SetException("Invalid player");
+                                    return maybe;
                                 }                              
                             }
 
                             maybe.SetSuccess(match);
                         }
-                    }
-                    if (matchToRemove != null)
-                    {
-                        queue.Remove(matchToRemove);
                     }
                 }
 
@@ -234,5 +266,7 @@ namespace OverflowBackend.Services.Implementantion
 
         public string GameId { get; set; }
         public bool IsGuest { get; set; }
+        public bool Player1IsBot { get; set; }
+        public bool Player2IsBot { get; set; }
     }
 }

@@ -4,5 +4,6 @@
     {
         public bool? Prematch { get; set; }
         public string? WithUsername { get; set; }
+        public bool? IsBot { get; set; }
     }
 }
