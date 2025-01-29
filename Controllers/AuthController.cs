@@ -71,7 +71,7 @@ namespace OverflowBackend.Controllers
         public async Task<IActionResult> ContinueAsGuest([FromBody] ContinueAsGuestRequest req)
         {
             var result = await _authService.ContinueAsGuest(req.IsBot);
-            return Ok(result);
+            return Ok(result); 
         }
 
         [HttpGet]
