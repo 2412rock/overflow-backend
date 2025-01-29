@@ -11,5 +11,6 @@ namespace OverflowBackend.Models.DB
         [Required]
         public string Username { get; set; }
         public int NumberOfGames { get; set; }
+        public bool IsBot { get; set; } 
     }
 }

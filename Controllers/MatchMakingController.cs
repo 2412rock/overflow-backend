@@ -26,8 +26,7 @@ namespace OverflowBackend.Controllers
         [Route("api/addtoqueue")]
         public async Task<IActionResult> AddToQueue([FromBody] AddToQueueRequest request)
         {
-            var isGuest = await _dbContext.GuestUsers.AnyAsync(e => e.Username == (string)HttpContext.Items["username"]);
-            var result = _matchMakingService.AddOrMatchPlayer((string)HttpContext.Items["username"], request.Prematch, request.WithUsername, isGuest);
+            var result = await _matchMakingService.AddToQueue((string)HttpContext.Items["username"], request.Prematch, request.WithUsername, _dbContext);
             return Ok(result);
         }
 

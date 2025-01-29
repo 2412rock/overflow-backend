@@ -29,13 +29,17 @@ namespace OverflowBackend.Middleware
                     if(token != "null")
                     {
                         var sessionId = TokenHelper.GetSessionIdFromToken(token);
-                        if (sessionId == null)
+                        var username = TokenHelper.GetUsernameFromToken(token);
+                        var user = await dbContext.Users.FirstOrDefaultAsync(e => e.Username == username);
+                        var guest = await dbContext.GuestUsers.FirstOrDefaultAsync(e => e.Username == username);
+                        if ( (sessionId == null) || (user == null && guest == null))
                         {
                             context.Response.StatusCode = 406;
                             await context.Response.WriteAsync("Session is invalid.");
                             return;
                         }
                         var session = await dbContext.UserSessions.FirstOrDefaultAsync(s => s.SessionToken == sessionId && s.IsActive);
+                        
                         if (session == null)
                         {
                             context.Response.StatusCode = 406;

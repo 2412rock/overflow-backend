@@ -76,7 +76,7 @@ namespace OverflowBackend.Services.Implementantion
         private async Task<string> HandleSession(string username)
         {
             var existingSession = await _dbContext.UserSessions.FirstOrDefaultAsync(s => s.Username == username && s.IsActive);
-            if (existingSession != null)
+            if (existingSession != null) 
             {
                 existingSession.IsActive = false;
                 await _dbContext.SaveChangesAsync();
@@ -480,7 +480,7 @@ namespace OverflowBackend.Services.Implementantion
         {
             DateTime currentDate = DateTime.Now;
 
-            var cutoffDate = currentDate.AddDays(-30); // Calculate the date 30 days ago
+            var cutoffDate = currentDate.AddDays(-1); // Calculate the date 30 days ago
             var expiredUsers = await _dbContext.UserSessions
                 .Where(e => e.LastActiveTime <= cutoffDate)
                 .Select(e => e.Username)
@@ -495,7 +495,7 @@ namespace OverflowBackend.Services.Implementantion
             }
             await _dbContext.SaveChangesAsync();
         }
-        public async Task<Maybe<Tokens>> ContinueAsGuest()
+        public async Task<Maybe<Tokens>> ContinueAsGuest(bool isBot)
         {
             var maybe = new Maybe<Tokens>();
 
@@ -520,7 +520,8 @@ namespace OverflowBackend.Services.Implementantion
                         await _dbContext.GuestUsers.AddAsync(new DBGuestUser()
                         {
                             Username = username,
-                            NumberOfGames = 0
+                            NumberOfGames = 0,
+                            IsBot = isBot,
                         });
                         await _dbContext.SaveChangesAsync();
                         break;
@@ -547,7 +548,7 @@ namespace OverflowBackend.Services.Implementantion
         private static string GenerateRandomGuestUsername()
         {
             Random random = new Random();
-            int randomNumber = random.Next(100000, 999999); // Generates a random number between 100000 and 999999
+            int randomNumber = random.Next(0, 999999); // Generates a random number between 100000 and 999999
             return "guest" + randomNumber.ToString();
         }
 

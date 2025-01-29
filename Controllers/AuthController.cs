@@ -68,10 +68,10 @@ namespace OverflowBackend.Controllers
 
         [HttpPost]
         [Route("api/continueAsGuest")]
-        public async Task<IActionResult> ContinueAsGuest()
+        public async Task<IActionResult> ContinueAsGuest([FromBody] ContinueAsGuestRequest req)
         {
-            var result = await _authService.ContinueAsGuest();
-            return Ok(result);
+            var result = await _authService.ContinueAsGuest(req.IsBot);
+            return Ok(result); 
         }
 
         [HttpGet]
