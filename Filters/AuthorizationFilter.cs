@@ -26,44 +26,49 @@ namespace OverflowBackend.Filters
         }
         public async void OnAuthorization(AuthorizationFilterContext context)
         {
-            var isNotValid = !GameVersionValid(context);
-            if (isNotValid)
+            try
             {
-                context.Result = new StatusCodeResult(405);
-                return;
-            }
-
-            StringValues authorizationHeaderValues;
-            if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
-            {
-                string authorizationHeader = authorizationHeaderValues.FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                var isNotValid = !GameVersionValid(context);
+                if (isNotValid)
                 {
-                    string token = authorizationHeader.Substring("Bearer ".Length).Trim();
-                    if (Role == "admin")
+                    context.Result = new StatusCodeResult(405);
+                    return;
+                }
+
+                StringValues authorizationHeaderValues;
+                if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out authorizationHeaderValues))
+                {
+                    string authorizationHeader = authorizationHeaderValues.FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(authorizationHeader) && authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!TokenHelper.IsAdmin(token))
+                        string token = authorizationHeader.Substring("Bearer ".Length).Trim();
+                        if (Role == "admin")
                         {
-                            context.Result = new StatusCodeResult(401);
+                            if (!TokenHelper.IsAdmin(token))
+                            {
+                                context.Result = new StatusCodeResult(401);
+                                return;
+                            }
+                        }
+                        var username = TokenHelper.GetUsernameFromToken(token);
+
+                        if (TokenHelper.IsTokenExpired(token))
+                        {
+                            context.Result = new StatusCodeResult(403);
                             return;
                         }
-                    }
-                    var username = TokenHelper.GetUsernameFromToken(token);
-
-                    if (TokenHelper.IsTokenExpired(token))
-                    {
-                        context.Result = new StatusCodeResult(403);
-                        return;
-                    }
-                    if (!String.IsNullOrEmpty(username))
-                    {
-                        context.HttpContext.Items["username"] = username;
-                        return;
-                    }
+                        if (!String.IsNullOrEmpty(username))
+                        {
+                            context.HttpContext.Items["username"] = username;
+                            return;
+                        }
 
 
+                    }
                 }
             }
+            catch { }
+            
             context.Result = new StatusCodeResult(401); ;
             return;
         }
