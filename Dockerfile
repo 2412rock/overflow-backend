@@ -8,19 +8,21 @@ RUN dotnet restore
 
 # Copy the remaining source code and build the application
 COPY . ./
-
 RUN dotnet publish -c Release -o out
 
 # Use a smaller runtime image for the final image
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
 
 WORKDIR /app
-#COPY backendcertificate.pfx /app/backendcertificate.pfx
+
+# Copy the SSL certificate into the container
+COPY backendcertificate.pfx /app/backendcertificate.pfx
+
 # Copy the built application from the build image
 COPY --from=build /app/out ./
 
-# Expose port 80 for the application
-EXPOSE 4200
+# Expose HTTPS port
+EXPOSE 5001
 
 # Define the command to run the application when the container starts
 ENTRYPOINT ["dotnet", "OverflowBackend.dll"]

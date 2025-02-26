@@ -11,12 +11,21 @@ using System.Net;
 using System.Net.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseKestrel(options =>
+//builder.WebHost.UseKestrel(options =>
+//{
+//    options.Listen(IPAddress.Any, 4200, listenOptions =>
+//    {
+//    });
+//});
+
+builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Listen(IPAddress.Any, 4200, listenOptions =>
+    options.ListenAnyIP(4200, listenOptions =>
     {
+        listenOptions.UseHttps("/app/backendcertificate.pfx");
     });
 });
+
 
 // Add services to the container.
 
