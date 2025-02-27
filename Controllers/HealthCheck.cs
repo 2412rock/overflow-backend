@@ -29,12 +29,12 @@ namespace OverflowBackend.Controllers
                 }
                 else
                 {
-                    maybe.SetException("Version is null");
+                    return StatusCode(500, "Version is null");
                 }
             }
             catch(Exception e)
             {
-                maybe.SetException("Database error occured " + e.Message);
+                return StatusCode(500, "Failed to connect to databse");
             }
             
             return Ok(maybe);
