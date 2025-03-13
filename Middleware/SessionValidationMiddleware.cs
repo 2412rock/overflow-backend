@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using OverflowBackend.Helpers;
 using OverflowBackend.Services;
-using StackExchange.Redis;
 using System.Net;
 
 namespace OverflowBackend.Middleware
