@@ -165,5 +165,106 @@ namespace OverflowBackend.Controllers
             }
             return Ok(maybe);
         }
+
+        [Route("useSkin")]
+        [AuthorizationFilter]
+        [HttpPut]
+        public async Task<IActionResult> UseSkin(PurchaseSkinRequest request)
+        {
+            var maybe = new Maybe<string>();
+            try
+            {
+                var skinsAndImages = new List<SkinAndImage>();
+                var username = (string)HttpContext.Items["username"];
+                var user = await _context.Users.FirstOrDefaultAsync(e => e.Username == username);
+
+                var any = await _context.OwnedSkins.AnyAsync(e => e.SkinId == request.SkinId && e.UserId == user.UserId);
+                if (any)
+                {
+                    user.CurrentSkinId = request.SkinId;
+                    await _context.SaveChangesAsync();
+                    maybe.SetSuccess("ok");
+                }
+                else
+                {
+                    maybe.SetException("skin not owned");
+                }
+            }
+            catch (Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+
+            return Ok(maybe);
+        }
+
+        [Route("getUserSkin")]
+        [AuthorizationFilter]
+        [HttpGet]
+        public async Task<IActionResult> GetUserSkin([FromQuery] string username)
+        {
+            var maybe = new Maybe<SkinAndImage>();
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(e => e.Username == username);
+                var skin = await _context.Skins.FirstOrDefaultAsync(e => e.Id == user.CurrentSkinId);
+                if (skin == null)
+                {
+                    maybe.SetSuccess(null);
+                }
+                else
+                {
+                    var image = await _blob.DownloadImage(skin.SkinName, "skins");
+                    var obj = new SkinAndImage()
+                    {
+                        Image = image,
+                        Skin = skin,
+                        Owned = true
+                    };
+                    maybe.SetSuccess(obj);
+                }
+            }
+            catch (Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+
+            return Ok(maybe);
+        }
+
+        [Route("getMyCurrentSkin")]
+        [AuthorizationFilter]
+        [HttpGet]
+        public async Task<IActionResult> GetMyCurrentSkin()
+        {
+            var maybe = new Maybe<SkinAndImage>();
+            try
+            {
+                var username = (string)HttpContext.Items["username"];
+                var user = await _context.Users.FirstOrDefaultAsync(e => e.Username == username);
+                var skin = await _context.Skins.FirstOrDefaultAsync(e => e.Id == user.CurrentSkinId);
+                if(skin == null)
+                {
+                    maybe.SetSuccess(null);
+                }
+                else
+                {
+                    var image = await _blob.DownloadImage(skin.SkinName, "skins");
+                    var obj = new SkinAndImage()
+                    {
+                        Image = image,
+                        Skin = skin,
+                        Owned = true
+                    };
+                    maybe.SetSuccess(obj);
+                }
+            }
+            catch(Exception e)
+            {
+                maybe.SetException(e.Message);
+            }
+
+            return Ok(maybe);
+        }
     }
 }
