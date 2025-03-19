@@ -32,7 +32,7 @@ namespace OverflowBackend.Services.Implementantion
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.Message, endpoint, accessKey, secretKey);
                 throw;
             }
         }
