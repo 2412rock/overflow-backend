@@ -32,7 +32,7 @@ namespace OverflowBackend.Services.Implementantion
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception occured at minio {endpoint} {accessKey} {accessKey}");
+                Console.WriteLine($"Exception occured at minio {endpoint} {accessKey} {secretKey}");
                 throw;
             }
         }
