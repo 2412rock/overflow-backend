@@ -15,6 +15,8 @@ namespace OverflowBackend.Models.DB
         public int Rank { get; set; }
         public int NumberOfGames { get; set; }
         public bool IsBot { get; set; }
+        public int ShopPoints { get; set; }
+        public int CurrentSkinId { get; set; }
 
     }
 }

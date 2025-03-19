@@ -123,8 +123,16 @@ namespace OverflowBackend.Services.Implementantion
             {
                 var expectedScore = GetExpectedScore(user.Rank, opponent.Rank);
                 int newRank = GetUpdatedScore(user.Rank, win ? 1 : 0, expectedScore);
+                // Update shop points
+                if (win)
+                {
+                    // if user win, grant shop points
+                    user.ShopPoints += newRank - user.Rank;
+                }
+               
                 user.Rank = newRank;
                 _dbContext.Users.Update(user);
+                
                 await _dbContext.SaveChangesAsync();
             }
         }
