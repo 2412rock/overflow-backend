@@ -9,6 +9,7 @@ using OverflowBackend.Models.Response.DorelAppBackend.Models.Responses;
 using OverflowBackend.Services;
 using OverflowBackend.Services.Implementantion;
 using OverflowBackend.Services.Interface;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace OverflowBackend.Controllers
 {
@@ -103,6 +104,18 @@ namespace OverflowBackend.Controllers
                     }
                     
                 }
+                // default skin
+                var defaultSkin = new SkinAndImage()
+                {
+                    Image = await _blob.DownloadImage("Default", "skins"),
+                    Skin = new Models.DB.DBSkin()
+                    {
+                        Id = 0,
+                        SkinName = "Default"
+                    },
+                    Owned = true
+                };
+                skinsAndImages.Add(defaultSkin);
                 maybe.SetSuccess(skinsAndImages);
             }
             catch (Exception e)
@@ -178,6 +191,13 @@ namespace OverflowBackend.Controllers
                 var username = (string)HttpContext.Items["username"];
                 var user = await _context.Users.FirstOrDefaultAsync(e => e.Username == username);
 
+                if(request.SkinId == 0)
+                {
+                    user.CurrentSkinId = request.SkinId;
+                    await _context.SaveChangesAsync();
+                    maybe.SetSuccess("ok");
+                    return Ok(maybe);
+                }
                 var any = await _context.OwnedSkins.AnyAsync(e => e.SkinId == request.SkinId && e.UserId == user.UserId);
                 if (any)
                 {
