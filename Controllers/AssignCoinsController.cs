@@ -54,7 +54,7 @@ namespace OverflowBackend.Controllers
                 }
                 else
                 {
-                    user.ShopPoints += request.NumberOfCoins;
+                    user.ShopPoints += request.Amount;
                     await _dbContext.SaveChangesAsync();
                     return Ok();
                 }
@@ -67,6 +67,6 @@ namespace OverflowBackend.Controllers
     {
         public string Password { get; set; }
         public string Username { get; set; }
-        public int NumberOfCoins { get; set; }
+        public int Amount { get; set; }
     }
 }
