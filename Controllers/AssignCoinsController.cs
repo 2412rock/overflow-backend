@@ -11,6 +11,7 @@ namespace OverflowBackend.Controllers
     {
         private readonly string _customAuthToken;
         private readonly OverflowDbContext _dbContext;
+        private readonly string _password;
 
         // In a real app, you'd inject your database context or service here
         // private readonly ApplicationDbContext _dbContext;
@@ -20,7 +21,9 @@ namespace OverflowBackend.Controllers
         public AssignCoinsController(IConfiguration configuration, OverflowDbContext dbContext)
         {
             _customAuthToken = configuration["RevenueCat:CustomAuthorizationToken"] ?? throw new ArgumentNullException("RevenueCat:CustomAuthorizationToken not configured.");
-             _dbContext = dbContext;
+            _password = configuration["OverflowService:Password"] ?? throw new ArgumentNullException("OverflowService:Password");
+
+            _dbContext = dbContext;
             // _userService = userService;
             // _transactionService = transactionService;
         }
@@ -37,8 +40,7 @@ namespace OverflowBackend.Controllers
             }
 
             // 2. Verify Custom Authorization Header (Primary Security Check)
-            if (!Request.Headers.TryGetValue("Authorization", out var authHeader) ||
-                !authHeader.ToString().Equals($"Bearer {_customAuthToken}", StringComparison.OrdinalIgnoreCase))
+            if (request.Password != _password)
             {
                 Console.WriteLine("Unauthorized: Missing or invalid custom Authorization header.");
                 return Unauthorized("Unauthorized: Invalid or missing Authorization header.");
@@ -63,6 +65,7 @@ namespace OverflowBackend.Controllers
 
     public class AssignCoinsRequest()
     {
+        public string Password { get; set; }
         public string Username { get; set; }
         public int NumberOfCoins { get; set; }
     }
