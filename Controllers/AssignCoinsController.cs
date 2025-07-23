@@ -22,7 +22,7 @@ namespace OverflowBackend.Controllers
         {
             _customAuthToken = configuration["RevenueCat:CustomAuthorizationToken"] ?? throw new ArgumentNullException("RevenueCat:CustomAuthorizationToken not configured.");
             _password = configuration["OverflowService:OverflowPassword"] ?? throw new ArgumentNullException("OverflowService:Password");
-
+            Console.WriteLine($"DEBUG (Controller): Initialized Overflow Password: '{_password}'");
             _dbContext = dbContext;
             // _userService = userService;
             // _transactionService = transactionService;
