@@ -21,7 +21,7 @@ namespace OverflowBackend.Controllers
         public AssignCoinsController(IConfiguration configuration, OverflowDbContext dbContext)
         {
             _customAuthToken = configuration["RevenueCat:CustomAuthorizationToken"] ?? throw new ArgumentNullException("RevenueCat:CustomAuthorizationToken not configured.");
-            _password = configuration["OverflowService:Password"] ?? throw new ArgumentNullException("OverflowService:Password");
+            _password = configuration["OverflowService:OverflowPassword"] ?? throw new ArgumentNullException("OverflowService:Password");
 
             _dbContext = dbContext;
             // _userService = userService;
