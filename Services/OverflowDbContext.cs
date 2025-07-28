@@ -16,5 +16,7 @@ namespace OverflowBackend.Services
             public DbSet<DbReport> UserReports { get; set; }
             public DbSet<DBSkin> Skins { get; set; }
             public DbSet<DBOwnedSkins> OwnedSkins { get; set; }
+            public DbSet<DBOrder> Orders { get; set; }
+
     }
 }

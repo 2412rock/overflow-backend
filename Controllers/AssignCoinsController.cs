@@ -32,6 +32,7 @@ namespace OverflowBackend.Controllers
         {
             Console.WriteLine("Received RevenueCat webhook request.");
 
+
             // 1. Get raw request body (still useful for logging/debugging if needed, though not for signature verification now)
             string rawBody;
             using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
@@ -54,9 +55,37 @@ namespace OverflowBackend.Controllers
                 }
                 else
                 {
-                    user.ShopPoints += request.Amount;
-                    await _dbContext.SaveChangesAsync();
-                    return Ok();
+                    var order = await _dbContext.Orders.FirstOrDefaultAsync(e => e.TransactionId == request.TransactionId);
+                    if (order == null || !order.Finalized)
+                    {
+                        
+                        if(order == null)
+                        {
+                            _dbContext.Orders.Add(new Models.DB.DBOrder()
+                            {
+                                TransactionId = request.TransactionId,
+                                Finalized = true
+                            });
+                        }
+                        else
+                        {
+                            order.Finalized = true;
+                            _dbContext.Update(order);
+                        }
+
+                        user.ShopPoints += request.Amount;
+                        _dbContext.Update(user);
+                        
+                        await _dbContext.SaveChangesAsync();
+                        Console.WriteLine("Order finalized");
+                        return Ok("Order finezlied");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Order already finalized");
+                        return Ok("Order already finalized");
+                    }
+                    
                 }
             }
         }
@@ -68,5 +97,6 @@ namespace OverflowBackend.Controllers
         public string Password { get; set; }
         public string Username { get; set; }
         public int Amount { get; set; }
+        public string TransactionId { get; set; }
     }
 }
