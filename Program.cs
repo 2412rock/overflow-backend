@@ -64,6 +64,7 @@ builder.Services.AddTransient<AuthService>();
 builder.Services.AddTransient<IPasswordHashService, PasswordHashService>();
 builder.Services.AddTransient<IFriendService, FriendService>();
 builder.Services.AddTransient<IMailService, MailService>();
+builder.Services.AddTransient<CoinsService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddSingleton<MatchMakingService>();
 builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
@@ -124,9 +125,10 @@ app.Use(async (context, next) =>
         using (var scope = app.Services.CreateScope())
         {
             var scoreService = scope.ServiceProvider.GetRequiredService<IScoreService>();
+            var coinsService = scope.ServiceProvider.GetRequiredService<CoinsService>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            await WebSocketHandler.HandleWebSocketRequest(webSocket, context, scoreService, logger);
+            await WebSocketHandler.HandleWebSocketRequest(webSocket, context, scoreService, logger, coinsService);
         }
     }
     else

@@ -206,8 +206,8 @@ namespace OverflowBackend.Services.Implementantion
 
                                 if (player1User != null && player2User != null)
                                 {
-                                    match.Player1Rank = player1User.Rank;
-                                    match.Player2Rank = player2User.Rank;
+                                    match.Player1Coins = player1User.ShopPoints;
+                                    match.Player2Coins = player2User.ShopPoints;
                                 }
                                 else if (player1Guest == null || player1Guest == null) 
                                 {
@@ -256,8 +256,8 @@ namespace OverflowBackend.Services.Implementantion
     {
         public string Player1 { get; set; }
         public string Player2 { get; set; }
-        public int Player1Rank { get; set; }
-        public int Player2Rank { get; set; }
+        public int Player1Coins { get; set; }
+        public int Player2Coins { get; set; }
         public List<double> Board { get; set; }
 
         public DateTime? HearBeatPlayer1 = null;

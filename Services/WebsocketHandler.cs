@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using OverflowBackend.Services.Interface;
+using OverflowBackend.Services.Implementantion;
 
 namespace OverflowBackend.Services
 {
@@ -10,6 +11,7 @@ namespace OverflowBackend.Services
         public static ConcurrentList<Game> Games = new ConcurrentList<Game>();
         static readonly object locker = new object();
         private static IScoreService _scoreService;
+        private static CoinsService _coinsService;
         private const string FIRST_MOVE_MSG = "start first move:";
         private const string PLAYER_1_RAN_OUT_TIME = "Player 1 ran out of time";
         private const string PLAYER_2_RAN_OUT_TIME = "Player 2 ran out of time";
@@ -23,12 +25,13 @@ namespace OverflowBackend.Services
         private const string OPPONENT_LEFT = "Opponent left";
         private static ILogger _logger;
 
-        public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext, IScoreService scoreService, ILogger logger)
+        public static async Task HandleWebSocketRequest(WebSocket webSocket, HttpContext httpConext, IScoreService scoreService, ILogger logger, CoinsService coinsService)
         {
             string gameId = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
             string players = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[2];
             string playerName = httpConext.Request.Path.Value.Split('/', StringSplitOptions.RemoveEmptyEntries)[3];
             _scoreService = scoreService;
+            _coinsService = coinsService;
             _logger = logger;
             try
             {
@@ -485,6 +488,7 @@ namespace OverflowBackend.Services
                         {
                             game.UpdatedPlayer1Score = true;
                             await _scoreService.UpdateScore(game.Player1, game.Player2, win);
+                            await _coinsService.GrantCoinsEndGame(game.Player1, win);
                         }
                     }
                     else if (player == 2)
@@ -493,6 +497,7 @@ namespace OverflowBackend.Services
                         {
                             game.UpdatedPlayer2Score = true;
                             await _scoreService.UpdateScore(game.Player2, game.Player1, win);
+                            await _coinsService.GrantCoinsEndGame(game.Player2, win);
                         }
                     }
                 }).Wait();
